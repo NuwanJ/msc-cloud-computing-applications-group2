@@ -44,16 +44,7 @@ Resources:
             Method: get
             RestApiId: !Ref GatewayAPI
 
-    # Metadata: # Manage esbuild properties
-    #   BuildMethod: esbuild
-    #   BuildProperties:
-    #     Minify: true
-    #     Target: es2020
-    #     Sourcemap: true
-    #     # EntryPoints:
-    #     # - app.ts
-
-  HelloWorldTwoFunction:
+  SampleFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: ./
@@ -62,21 +53,13 @@ Resources:
       Architectures:
       - x86_64
       Events:
-        HelloWorld:
+        Sample:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello2
+            Path: /sample
             Method: get
             RestApiId: !Ref GatewayAPI
 
-    # Metadata: # Manage esbuild properties
-    #   BuildMethod: esbuild
-    #   BuildProperties:
-    #     Minify: true
-    #     Target: es2020
-    #     Sourcemap: true
-    #     EntryPoints:
-    #     - sample.ts
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group

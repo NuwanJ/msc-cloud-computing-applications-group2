@@ -1,4 +1,4 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 
 /**
  *
@@ -11,26 +11,32 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
  */
 
 export const lambdaHandler = async (
-    event: APIGatewayProxyEvent
+  event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-    try {
-        return {
-            statusCode: 200,
-            body: JSON.stringify({
-                message: "sample handler !",
-                event,
-            }),
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({
-                message: "some error happened",
-                event,
-            }),
-        };
-    }
+  try {
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: "sample handler !",
+        event: {
+          method: event.httpMethod,
+          body: event.body,
+          headers: event.headers,
+          queryParam: event.queryStringParameters,
+          pathParam: event.pathParameters,
+        },
+      }),
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: "some error happened",
+        event,
+      }),
+    };
+  }
 };
 
 export default lambdaHandler;
