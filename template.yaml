@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  cloud-project
+  cloud-project-v1
 
   Sample SAM Template for cloud-project
 
@@ -9,7 +9,7 @@ Description: >
 Parameters:
   ApiStageName:
     Type: String
-    Default: test
+    Default: dev
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -17,11 +17,13 @@ Globals:
     Timeout: 30
     Runtime: nodejs18.x
     Tracing: Active
+    Environment:
+      Variables:
+        Stage: !Ref ApiStageName
   Api:
     TracingEnabled: true
 
 Resources:
-
   GatewayAPI:
     Type: AWS::Serverless::Api
     Properties:
@@ -33,7 +35,7 @@ Resources:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: ./
-      Handler: ./dist/app.default 
+      Handler: ./dist/src/app.default 
       Events:
         HelloWorld:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -47,7 +49,7 @@ Resources:
     Type: AWS::Serverless::Function 
     Properties:
       CodeUri: ./
-      Handler: ./dist/sample-handler.default
+      Handler: ./dist/src/sample-handler.default
       Events:
         Sample:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -88,7 +90,7 @@ Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
+  SampleApi:
     Description: API Gateway endpoint URL for stage for Sample function
     Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/sample/"
   SampleFunction:
