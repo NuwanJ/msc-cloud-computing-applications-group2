@@ -5,7 +5,7 @@ version = 0.1
 [default]
 [default.global]
 [default.global.parameters]
-stack_name = "cloud-project"
+stack_name = "cloud-project-v1"
 
 [default.build]
 [default.build.parameters]
@@ -19,7 +19,7 @@ lint = true
 [default.deploy]
 [default.deploy.parameters]
 capabilities = "CAPABILITY_IAM"
-confirm_changeset = true
+confirm_changeset = false
 resolve_s3 = true
 
 [default.package]
@@ -46,6 +46,6 @@ s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-fynhvetxqjw"
 s3_prefix = "cloud-project"
 region = "us-east-1"
 profile = "Nuwan"
-confirm_changeset = true
+confirm_changeset = false
 capabilities = "CAPABILITY_IAM"
 image_repositories = []

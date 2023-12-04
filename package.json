@@ -1,16 +1,15 @@
 {
   "name": "hello_world",
   "version": "1.0.0",
-  "description": "hello world sample for NodeJS",
-  "main": "app.js",
-  "repository": "https://github.com/awslabs/aws-sam-cli/tree/develop/samcli/local/init/templates/cookiecutter-aws-sam-hello-nodejs",
+  "description": "NodeJS AWS CLI ",
+  "repository": "",
   "author": "SAM CLI",
   "license": "MIT",
   "scripts": {
-    "unit": "jest",
+    "build": "tsc",
     "lint": "eslint '*.ts' --quiet --fix",
-    "compile": "tsc",
-    "test": "npm run compile && npm run unit"
+    "predeploy": "npm run build && sam validate && sam build",
+    "test": "npm run build && jest --verbose --coverage"
   },
   "dependencies": {
     "esbuild": "^0.14.14"
@@ -24,6 +23,7 @@
     "esbuild-jest": "^0.5.0",
     "eslint": "^8.8.0",
     "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-prettier": "^4.0.0",
     "jest": "^29.2.1",
     "prettier": "^2.5.1",

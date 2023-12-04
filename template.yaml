@@ -1,41 +1,56 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  cloud-project
+  cloud-project-v1
 
   Sample SAM Template for cloud-project
+
+# We can add parameters
+Parameters:
+  ApiStageName:
+    Type: String
+    Default: dev
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 30
+    Runtime: nodejs18.x
     Tracing: Active
+    Environment:
+      Variables:
+        Stage: !Ref ApiStageName
   Api:
     TracingEnabled: true
 
 Resources:
-  HelloWorldFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  GatewayAPI:
+    Type: AWS::Serverless::Api
     Properties:
-      CodeUri: hello-world/
-      Handler: app.lambdaHandler
-      Runtime: nodejs18.x
-      Architectures:
-      - x86_64
+      Name: !Sub cloud-project-${ApiStageName}-api
+      StageName: !Ref ApiStageName # This is where we can set stage name
+
+
+  SampleFunction:
+    # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: ./
+      Handler: ./dist/src/sample-handler.default
       Events:
-        HelloWorld:
+        Sample:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
-            Method: get
-    Metadata: # Manage esbuild properties
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2020
-        Sourcemap: true
-        EntryPoints:
-        - app.ts
+            Path: /sample
+            Method: any
+            RestApiId: !Ref GatewayAPI
+        SampleActions:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /sample/{action}
+            Method: any
+            RestApiId: !Ref GatewayAPI
+
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
@@ -57,16 +72,17 @@ Resources:
           - Ref: AWS::StackName
       AutoConfigurationEnabled: 'true'
     DependsOn: ApplicationResourceGroup
+
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: API Gateway endpoint URL for Prod stage for Hello World function
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: Hello World Lambda Function ARN
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: Implicit IAM Role created for Hello World function
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+  SampleApi:
+    Description: API Gateway endpoint URL for stage for Sample function
+    Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/sample/"
+  SampleFunction:
+    Description: SampleFunction Lambda Function ARN
+    Value: !GetAtt SampleFunction.Arn
+  SampleFunctionIAMRole:
+    Description: Implicit IAM Role created for SampleFunction function
+    Value: !GetAtt SampleFunctionRole.Arn
