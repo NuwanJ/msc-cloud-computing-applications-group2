@@ -14,7 +14,8 @@ Parameters:
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 30
+    Runtime: nodejs18.x
     Tracing: Active
   Api:
     TracingEnabled: true
@@ -33,9 +34,6 @@ Resources:
     Properties:
       CodeUri: ./
       Handler: ./dist/app.default 
-      Runtime: nodejs18.x
-      Architectures:
-      - x86_64
       Events:
         HelloWorld:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -45,19 +43,23 @@ Resources:
             RestApiId: !Ref GatewayAPI
 
   SampleFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function 
     Properties:
       CodeUri: ./
       Handler: ./dist/sample-handler.default
-      Runtime: nodejs18.x
-      Architectures:
-      - x86_64
       Events:
         Sample:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /sample
-            Method: get
+            Method: any
+            RestApiId: !Ref GatewayAPI
+        SampleActions:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /sample/{action}
+            Method: any
             RestApiId: !Ref GatewayAPI
 
 
@@ -81,16 +83,17 @@ Resources:
           - Ref: AWS::StackName
       AutoConfigurationEnabled: 'true'
     DependsOn: ApplicationResourceGroup
+
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   HelloWorldApi:
-    Description: API Gateway endpoint URL for stage for Hello World function
-    Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/hello/"
-  HelloWorldFunction:
-    Description: Hello World Lambda Function ARN
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: Implicit IAM Role created for Hello World function
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+    Description: API Gateway endpoint URL for stage for Sample function
+    Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/sample/"
+  SampleFunction:
+    Description: SampleFunction Lambda Function ARN
+    Value: !GetAtt SampleFunction.Arn
+  SampleFunctionIAMRole:
+    Description: Implicit IAM Role created for SampleFunction function
+    Value: !GetAtt SampleFunctionRole.Arn

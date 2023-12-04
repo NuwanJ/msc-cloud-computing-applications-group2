@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint '*.ts' --quiet --fix",
-    "predeploy": "npm run build && sam build",
+    "predeploy": "npm run build && sam validate && sam build",
     "test": "npm run build && jest --verbose --coverage"
   },
   "dependencies": {
