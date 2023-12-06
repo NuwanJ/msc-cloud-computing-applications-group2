@@ -7,7 +7,6 @@ export class SampleHandler extends APIGatewayEventHandler {
   // Path formats:
   // - /sample
   // - /sample/{action}
-
   async handle(): Promise<IEventResult> {
     if (this.event.requestContext.httpMethod === RequestType.GET) {
       return new EventResult(
@@ -32,9 +31,15 @@ export class SampleHandler extends APIGatewayEventHandler {
         },
         200
       );
+    } else {
+      return this.sampleFunction();
     }
 
     return new EventResult(null, 404);
+  }
+
+  async sampleFunction(): Promise<IEventResult> {
+    return new EventResult({}, 200);
   }
 
   constructor(public environmentProvider: IEnvironmentProvider) {
