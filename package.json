@@ -1,5 +1,5 @@
 {
-  "name": "hello_world",
+  "name": "Cloud Group Project",
   "version": "1.0.0",
   "description": "NodeJS AWS CLI ",
   "repository": "",
@@ -8,8 +8,9 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint '*.ts' --quiet --fix",
+    "test": "npm run build && jest --verbose --coverage",
     "predeploy": "npm run build && sam validate && sam build",
-    "test": "npm run build && jest --verbose --coverage"
+    "deploy": "sam deploy"
   },
   "dependencies": {
     "esbuild": "^0.14.14"
