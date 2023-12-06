@@ -45,7 +45,6 @@ stack_name = "cloud-project"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-fynhvetxqjw"
 s3_prefix = "cloud-project"
 region = "us-east-1"
-profile = "Nuwan"
 confirm_changeset = false
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
