@@ -6,7 +6,7 @@
   "author": "SAM CLI",
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
+    "build": "ts-node build.ts",
     "lint": "eslint '*.ts' --quiet --fix",
     "test": "npm run build && jest --verbose --coverage",
     "predeploy": "npm run build && sam validate && sam build",
