@@ -2,6 +2,7 @@ import { IEventResult, RequestType } from "../../types/APIGatewayTypes";
 import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
 import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
 import { EventResult } from "../lib/EventHandler";
+import config from "../config/";
 
 export class SampleHandler extends APIGatewayEventHandler {
   // Path formats:
@@ -12,6 +13,7 @@ export class SampleHandler extends APIGatewayEventHandler {
     if (this.event.requestContext.httpMethod === RequestType.GET) {
       return new EventResult(
         {
+          region: config.AWS.region,
           message: "This is a sample message for a GET request",
           request: {
             query: this.getQueryStringParameters(),

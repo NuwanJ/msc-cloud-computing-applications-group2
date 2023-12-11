@@ -9,6 +9,10 @@ The AWS Toolkit is an open source plug-in for popular IDEs that uses the SAM CLI
 
 ## Setup
 
+#### Environment Setup
+
+Copy the `.env.sample` file, and rename it as `.env`. Next fill the blanks in it with your AWS credentials.
+
 #### Node Setup
 
 - Node.js - [Install Node.js 18](https://nodejs.org/en/), including the NPM package management tool.
@@ -113,8 +117,8 @@ Tests are defined in the `hello-world/tests` folder in this project. Use NPM to 
 
 ```bash
 cloud-project$ cd hello-world
-hello-world$ npm install
-hello-world$ npm run test
+cloud-project$ npm install
+cloud-project$ npm run test
 ```
 
 ## Cleanup
