@@ -70,7 +70,7 @@ Test a single function by invoking it directly with a test event. An event is a 
 Run functions locally and invoke them with the `sam local invoke` command.
 
 ```bash
-cloud-project$ sam local invoke HelloWorldFunction --event events/event.json
+cloud-project$ sam local invoke SampleFunction --event events/event.json
 ```
 
 The SAM CLI can also emulate your application's API. Use the `sam local start-api` to run the API locally on port 3000.
@@ -79,6 +79,8 @@ The SAM CLI can also emulate your application's API. Use the `sam local start-ap
 cloud-project$ sam local start-api
 cloud-project$ curl http://localhost:3000/
 ```
+
+Note: if you get any error like `Error: Running AWS SAM projects locally requires Docker. Have you got it installed and running?`, please configure the Docker Path Variable (use `export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock` in Mac)
 
 The SAM CLI reads the application template to determine the API's routes and the functions that they invoke. The `Events` property on each function's definition includes the route and method for each path.
 
