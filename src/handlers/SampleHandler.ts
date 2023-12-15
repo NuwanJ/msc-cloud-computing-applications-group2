@@ -39,7 +39,7 @@ export class SampleHandler extends APIGatewayEventHandler {
   }
 
   async sampleFunction(): Promise<IEventResult> {
-    return new EventResult({}, 200);
+    return new EventResult({ Sample: "This is a sample function" }, 200);
   }
 
   constructor(public environmentProvider: IEnvironmentProvider) {
