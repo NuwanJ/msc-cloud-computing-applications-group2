@@ -60,7 +60,7 @@ You can find your API Gateway Endpoint URL in the output values displayed after 
 Build your application with the `sam build` command.
 
 ```bash
-cloud-project$ sam build
+sam build
 ```
 
 The SAM CLI installs dependencies defined in `hello-world/package.json`, compiles TypeScript with esbuild, creates a deployment package, and saves it in the `.aws-sam/build` folder.
@@ -70,14 +70,14 @@ Test a single function by invoking it directly with a test event. An event is a 
 Run functions locally and invoke them with the `sam local invoke` command.
 
 ```bash
-cloud-project$ sam local invoke SampleFunction --event events/event.json
+sam local invoke SampleFunction --event events/event.json
 ```
 
 The SAM CLI can also emulate your application's API. Use the `sam local start-api` to run the API locally on port 3000.
 
 ```bash
-cloud-project$ sam local start-api
-cloud-project$ curl http://localhost:3000/
+sam local start-api
+curl http://localhost:3000/
 ```
 
 Note: if you get any error like `Error: Running AWS SAM projects locally requires Docker. Have you got it installed and running?`, please configure the Docker Path Variable (use `export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock` in Mac)
@@ -104,7 +104,7 @@ To simplify troubleshooting, SAM CLI has a command called `sam logs`. `sam logs`
 `NOTE`: This command works for all AWS Lambda functions; not just the ones you deploy using SAM.
 
 ```bash
-cloud-project$ sam logs -n HelloWorldFunction --stack-name cloud-project --tail
+sam logs -n HelloWorldFunction --stack-name cloud-project --tail
 ```
 
 You can find more information and examples about filtering Lambda function logs in the [SAM CLI Documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-logging.html).
@@ -114,7 +114,7 @@ You can find more information and examples about filtering Lambda function logs 
 Tests are defined in the `hello-world/tests` folder in this project. Use NPM to install the [Jest test framework](https://jestjs.io/) and run unit tests.
 
 ```bash
-cloud-project$ cd hello-world
+cd hello-world
 hello-world$ npm install
 hello-world$ npm run test
 ```
