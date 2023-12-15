@@ -1,61 +1,58 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { lambdaHandler } from "../../src/app";
+// import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { SampleHandler } from "../../src/handlers/SampleHandler";
+import { APIGatewayEventHandler } from "../../src/lib/APIGatewayEventHandler";
+import { EventResult } from "../../src/lib/EventHandler";
+import { RequestType } from "../../types/APIGatewayTypes";
+// import { IEnvironmentProvider } from "../../src/lib/EnvironmentProvider";
+
+let EnvironmentProviderMock: jest.Mock;
+let handler;
+
+beforeAll(() => {
+  EnvironmentProviderMock = jest.fn(() => ({
+    env: {
+      SecretKey: "SecretKey",
+    },
+    getValue(key): string {
+      return key;
+    },
+    getEnvObject(): Record<string, string> {
+      return this.env;
+    },
+  }));
+
+  handler = new SampleHandler(EnvironmentProviderMock());
+});
 
 describe("Unit test for app handler", function () {
-  it("verifies successful response", async () => {
-    const event: APIGatewayProxyEvent = {
-      httpMethod: "get",
-      body: "",
-      headers: {},
-      isBase64Encoded: false,
-      multiValueHeaders: {},
-      multiValueQueryStringParameters: {},
-      path: "/hello",
-      pathParameters: {},
-      queryStringParameters: {},
-      requestContext: {
-        accountId: "123456789012",
-        apiId: "1234",
-        authorizer: {},
-        httpMethod: "get",
-        identity: {
-          accessKey: "",
-          accountId: "",
-          apiKey: "",
-          apiKeyId: "",
-          caller: "",
-          clientCert: {
-            clientCertPem: "",
-            issuerDN: "",
-            serialNumber: "",
-            subjectDN: "",
-            validity: { notAfter: "", notBefore: "" },
-          },
-          cognitoAuthenticationProvider: "",
-          cognitoAuthenticationType: "",
-          cognitoIdentityId: "",
-          cognitoIdentityPoolId: "",
-          principalOrgId: "",
-          sourceIp: "",
-          user: "",
-          userAgent: "",
-          userArn: "",
-        },
-        path: "/hello",
-        protocol: "HTTP/1.1",
-        requestId: "c6af9ac6-7b61-11e6-9a41-93e8deadbeef",
-        requestTimeEpoch: 1428582896000,
-        resourceId: "123456",
-        resourcePath: "/hello",
-        stage: "dev",
-      },
-      resource: "",
-      stageVariables: {},
-    };
-    const result: APIGatewayProxyResult = await lambdaHandler(event);
-    const resp = JSON.parse(result.body);
+  it("Verifies successful response", async () => {
+    const result = await handler.sampleFunction();
 
     expect(result.statusCode).toEqual(200);
-    expect(resp.message).toEqual("hello world !");
+    expect(result.body).toEqual({ Sample: "This is a sample function" });
+  });
+
+  it("Test custom events ", async () => {
+    // Set custom event parameters for testing
+    handler.setEvent({
+      ...handler.event,
+      pathParameters: { id: "1234" },
+      queryStringParameters: { q: "abcd" },
+      requestContext: {
+        ...handler.event?.requestContext,
+        httpMethod: RequestType.GET,
+      },
+    });
+
+    const result = await handler.handle();
+
+    expect(result.statusCode).toEqual(200);
+    expect(result.body).toEqual({
+      message: "This is a sample message for a GET request",
+      request: {
+        path: { id: "1234" },
+        query: { q: "abcd" },
+      },
+    });
   });
 });
