@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   cloud-project-v1
@@ -30,13 +30,19 @@ Resources:
       Name: !Sub cloud-project-${ApiStageName}-api
       StageName: !Ref ApiStageName # This is where we can set stage name
 
-
   SampleFunction:
     # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-    Type: AWS::Serverless::Function 
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./
       Handler: ./dist/src/sample-handler.default
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminCreateUser
+              Resource: arn:aws:cognito-idp:us-east-1:375937289305:userpool/us-east-1_wNXeI5gUS # Update this with your Cognito User Pool ARN
       Events:
         Sample:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -50,16 +56,21 @@ Resources:
             Path: /sample/{action}
             Method: any
             RestApiId: !Ref GatewayAPI
-
+        User:
+          Type: Api
+          Properties:
+            Path: /user
+            Method: any
+            RestApiId: !Ref GatewayAPI
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
     Properties:
       Name:
         Fn::Join:
-        - ''
-        - - ApplicationInsights-SAM-
-          - Ref: AWS::StackName
+          - ""
+          - - ApplicationInsights-SAM-
+            - Ref: AWS::StackName
       ResourceQuery:
         Type: CLOUDFORMATION_STACK_1_0
   ApplicationInsightsMonitoring:
@@ -67,10 +78,10 @@ Resources:
     Properties:
       ResourceGroupName:
         Fn::Join:
-        - ''
-        - - ApplicationInsights-SAM-
-          - Ref: AWS::StackName
-      AutoConfigurationEnabled: 'true'
+          - ""
+          - - ApplicationInsights-SAM-
+            - Ref: AWS::StackName
+      AutoConfigurationEnabled: "true"
     DependsOn: ApplicationResourceGroup
 
 Outputs:
