@@ -51,6 +51,23 @@ Resources:
             Method: any
             RestApiId: !Ref GatewayAPI
 
+  ReminderFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: ./
+      Handler: ./dist/src/reminder-handler.default
+      Events:
+        WebAPI:
+          Type: Api 
+          Properties:
+            Path: /scheduler/reminder
+            Method: any
+            RestApiId: !Ref GatewayAPI
+        Cron:
+          Type: Schedule
+          Properties:
+            Schedule: cron(*/30 * * * ? *)
+
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
