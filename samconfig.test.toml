@@ -5,7 +5,7 @@ version = 0.1
 [default]
 [default.global]
 [default.global.parameters]
-stack_name = "cloud-project-v1-test"
+stack_name = "cloud-project-test"
 
 [default.build]
 [default.build.parameters]
