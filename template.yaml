@@ -2,7 +2,6 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   cloud-project-v1
-
   Sample SAM Template for cloud-project
 
 # We can add parameters
@@ -30,6 +29,15 @@ Resources:
       Name: !Sub cloud-project-${ApiStageName}-api
       StageName: !Ref ApiStageName # This is where we can set stage name
 
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: AppUsers
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+
   SampleFunction:
     # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Type: AWS::Serverless::Function
@@ -38,11 +46,6 @@ Resources:
       Handler: ./dist/src/sample-handler.default
       Policies:
         - AWSLambdaBasicExecutionRole
-        - Statement:
-            - Effect: Allow
-              Action:
-                - cognito-idp:AdminCreateUser
-              Resource: arn:aws:cognito-idp:us-east-1:375937289305:userpool/us-east-1_wNXeI5gUS # Update this with your Cognito User Pool ARN
       Events:
         Sample:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -56,12 +59,31 @@ Resources:
             Path: /sample/{action}
             Method: any
             RestApiId: !Ref GatewayAPI
-        User:
+  
+  UserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: ./dist/src/user-handler.default
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminDeleteUser
+                Resource: 
+                  - !GetAtt UserPool.Arn
+      Events:
+        UserActions:
           Type: Api
           Properties:
-            Path: /user
+            Path: /user/{action}
             Method: any
             RestApiId: !Ref GatewayAPI
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref UserPool
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
