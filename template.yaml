@@ -56,6 +56,11 @@ Resources:
     Properties:
       CodeUri: ./
       Handler: ./dist/src/reminder-handler.default
+      Policies:
+        - AmazonSESFullAccess 
+      Environment:
+        Variables:
+          REGION: !Ref AWS::Region
       Events:
         WebAPI:
           Type: Api 
@@ -63,10 +68,10 @@ Resources:
             Path: /scheduler/reminder
             Method: any
             RestApiId: !Ref GatewayAPI
-        Cron:
-          Type: Schedule
-          Properties:
-            Schedule: cron(*/30 * * * ? *)
+        # Cron:
+        #   Type: Schedule
+        #   Properties:
+        #     Schedule: cron(*/30 * * * ? *)
 
 
   ApplicationResourceGroup:
