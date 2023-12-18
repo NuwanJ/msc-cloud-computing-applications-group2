@@ -45,8 +45,7 @@ export class UserHandler extends APIGatewayEventHandler {
     });
 
     const params = {
-      UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"), // to be moved into environment provider
-      // UserPoolId: process.env.USER_POOL_ID, // to be moved into environment provider
+      UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"),
       Username: username,
       UserAttributes: [{ Name: "email", Value: email }],
       TemporaryPassword: password,
