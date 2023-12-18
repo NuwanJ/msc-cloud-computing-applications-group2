@@ -20,10 +20,6 @@ export class UserHandler extends APIGatewayEventHandler {
     return new EventResult(null, 404);
   }
 
-  async sampleFunction(): Promise<IEventResult> {
-    return new EventResult({ Sample: "This is a sample function" }, 200);
-  }
-
   async loginUser(): Promise<IEventResult> {
     try {
       return new EventResult({ message: "User login" }, 201);
