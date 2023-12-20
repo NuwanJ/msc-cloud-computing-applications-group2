@@ -30,13 +30,37 @@ export class ReminderHandler extends APIGatewayEventHandler {
       Source: "nuwanjaliyagoda@gmail.com", // Email address verified in SES console
     };
 
+    const verifyParams = {
+      EmailAddress: email, // Replace with the email address to verify
+    };
+
     try {
-      const data = await this.ses.sendEmail(params).promise();
-      console.log("Email sent:", data);
-      return new EventResult({ Sample: "Email sent successfully!" }, 200);
-    } catch (error) {
-      console.error("Error sending email:", error);
-      return new EventResult({ Sample: "Error sending email" }, 500);
+      this.ses.verifyEmailAddress(verifyParams, async (err, data) => {
+        if (err) {
+          console.error("Error verifying email address:", err);
+          return new EventResult(
+            { message: "Error verifying email address" },
+            500
+          );
+        } else {
+          console.log("Verification email sent:", data);
+
+          try {
+            const data = await this.ses.sendEmail(params).promise();
+            console.log("Email sent:", data);
+            return new EventResult(
+              { message: "Email sent successfully!" },
+              200
+            );
+          } catch (error) {
+            console.error("Error sending email:", error);
+            return new EventResult({ message: "Error sending email" }, 500);
+          }
+        }
+      });
+    } catch (verificationErr) {
+      console.error("Error verifying email address:", verificationErr);
+      return new EventResult({ message: "Error verifying email address" }, 500);
     }
   }
 
