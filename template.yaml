@@ -61,8 +61,8 @@ Resources:
         - Statement:
               - Effect: Allow
                 Action:
-                  - cognito-idp:CreateAppointment
-                  - cognito-idp:DeleteAppointment
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminDeleteUser
                 Resource: 
                   - !GetAtt UserPool.Arn
       Events:

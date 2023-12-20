@@ -36,7 +36,8 @@ export class AppointmentHandler extends APIGatewayEventHandler {
     };
 
     try {
-      await cognito.createAppointment(params).promise();
+      //TODO clarify what method from cognito to use.
+      await cognito.(params).promise();
       return new EventResult({ message: "Appointment booked successfully" }, 201);
     } catch (error) {
       console.error(error);
