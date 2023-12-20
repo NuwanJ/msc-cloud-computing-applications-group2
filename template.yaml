@@ -11,6 +11,10 @@ Parameters:
     Type: String
     Default: dev
 
+  sampleTableName:
+    Type: String
+    Default: sampleTable
+
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
@@ -20,6 +24,7 @@ Globals:
     Environment:
       Variables:
         Stage: !Ref ApiStageName
+        SampleTableName: !Ref sampleTableName
   Api:
     TracingEnabled: true
 
@@ -30,6 +35,19 @@ Resources:
       Name: !Sub cloud-project-${ApiStageName}-api
       StageName: !Ref ApiStageName # This is where we can set stage name
 
+  SampleTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Ref sampleTableName
+      AttributeDefinitions:
+        - AttributeName: 'id'
+          AttributeType: 'S'
+      KeySchema:
+        - AttributeName: 'id'
+          KeyType: 'HASH'
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
 
   SampleFunction:
     # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -37,6 +55,9 @@ Resources:
     Properties:
       CodeUri: ./
       Handler: ./dist/src/sample-handler.default
+      Policies:
+         - DynamoDBCrudPolicy:
+            TableName: !Ref SampleTable
       Events:
         Sample:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -45,9 +66,15 @@ Resources:
             Method: any
             RestApiId: !Ref GatewayAPI
         SampleActions:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
           Properties:
             Path: /sample/{action}
+            Method: any
+            RestApiId: !Ref GatewayAPI
+        SampleSubActions:
+          Type: Api
+          Properties:
+            Path: /sample/{action}/{subAction}
             Method: any
             RestApiId: !Ref GatewayAPI
 
