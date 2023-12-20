@@ -13,7 +13,9 @@
     "deploy": "sam deploy"
   },
   "dependencies": {
-    "esbuild": "^0.14.14"
+    "aws-sdk": "^2.1522.0",
+    "esbuild": "^0.14.14",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
