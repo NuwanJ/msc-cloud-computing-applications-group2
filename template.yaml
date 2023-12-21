@@ -107,9 +107,3 @@ Outputs:
   SampleApi:
     Description: API Gateway endpoint URL for stage for Sample function
     Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/sample/"
-  SampleFunction:
-    Description: SampleFunction Lambda Function ARN
-    Value: !GetAtt SampleFunction.Arn
-  SampleFunctionIAMRole:
-    Description: Implicit IAM Role created for SampleFunction function
-    Value: !GetAtt SampleFunctionRole.Arn
