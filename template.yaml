@@ -1,9 +1,7 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   cloud-project-v1
-
-  Sample SAM Template for cloud-project
 
 # We can add parameters
 Parameters:
@@ -13,7 +11,7 @@ Parameters:
 
   sampleTableName:
     Type: String
-    Default: sampleTable
+    Default: sampleTableName
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -24,7 +22,7 @@ Globals:
     Environment:
       Variables:
         Stage: !Ref ApiStageName
-        SampleTableName: !Ref sampleTableName
+        SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
   Api:
     TracingEnabled: true
 
@@ -36,15 +34,15 @@ Resources:
       StageName: !Ref ApiStageName # This is where we can set stage name
 
   SampleTable:
-    Type: 'AWS::DynamoDB::Table'
+    Type: "AWS::DynamoDB::Table"
     Properties:
-      TableName: !Ref sampleTableName
+      TableName: !Sub ${sampleTableName}-${ApiStageName}
       AttributeDefinitions:
-        - AttributeName: 'id'
-          AttributeType: 'S'
+        - AttributeName: "id"
+          AttributeType: "S"
       KeySchema:
-        - AttributeName: 'id'
-          KeyType: 'HASH'
+        - AttributeName: "id"
+          KeyType: "HASH"
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -84,7 +82,7 @@ Resources:
     Properties:
       Name:
         Fn::Join:
-        - ''
+        - ""
         - - ApplicationInsights-SAM-
           - Ref: AWS::StackName
       ResourceQuery:
@@ -94,10 +92,10 @@ Resources:
     Properties:
       ResourceGroupName:
         Fn::Join:
-        - ''
+        - ""
         - - ApplicationInsights-SAM-
           - Ref: AWS::StackName
-      AutoConfigurationEnabled: 'true'
+      AutoConfigurationEnabled: "true"
     DependsOn: ApplicationResourceGroup
 
 Outputs:
@@ -105,11 +103,5 @@ Outputs:
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   SampleApi:
-    Description: API Gateway endpoint URL for stage for Sample function
+    Description: API Gateway Endpoint URL
     Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/sample/"
-  SampleFunction:
-    Description: SampleFunction Lambda Function ARN
-    Value: !GetAtt SampleFunction.Arn
-  SampleFunctionIAMRole:
-    Description: Implicit IAM Role created for SampleFunction function
-    Value: !GetAtt SampleFunctionRole.Arn
