@@ -111,7 +111,7 @@ You can find more information and examples about filtering Lambda function logs 
 
 ## Unit tests
 
-Tests are defined in the `hello-world/tests` folder in this project. Use NPM to install the [Jest test framework](https://jestjs.io/) and run unit tests.
+Tests are defined in the `/tests` folder in this project. Use NPM to install the [Jest test framework](https://jestjs.io/) and run unit tests.
 
 ```bash
 npm install
