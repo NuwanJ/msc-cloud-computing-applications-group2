@@ -20,20 +20,21 @@ export class ReminderHandler extends APIGatewayEventHandler {
       Message: {
         Body: {
           Text: {
-            Data: "This is the message body.", // Your email body content
+            Data: "This is the message body.",
           },
         },
         Subject: {
-          Data: "Subject of the email", // Your email subject
+          Data: "Subject of the email",
         },
       },
-      Source: "nuwanjaliyagoda@gmail.com", // Email address verified in SES console
+      Source: "nuwanjaliyagoda@gmail.com",
     };
 
     const verifyParams = {
-      EmailAddress: email, // Replace with the email address to verify
+      EmailAddress: email,
     };
 
+    // Send verification Email, this only requred once
     try {
       await this.ses.verifyEmailAddress(verifyParams, (err, data) => {
         if (err) {
@@ -47,22 +48,14 @@ export class ReminderHandler extends APIGatewayEventHandler {
       return new EventResult({ message: "Error verifying email address" }, 500);
     }
 
-          try {
-            const data = await this.ses.sendEmail(params).promise();
-            console.log("Email sent:", data);
-            return new EventResult(
-              { message: "Email sent successfully!" },
-              200
-            );
-          } catch (error) {
-            console.error("Error sending email:", error);
-            return new EventResult({ message: "Error sending email" }, 500);
-          }
-        }
-      });
-    } catch (verificationErr) {
-      console.error("Error verifying email address:", verificationErr);
-      return new EventResult({ message: "Error verifying email address" }, 500);
+    // Send the Email
+    try {
+      const data = await this.ses.sendEmail(params).promise();
+      console.log("Email sent:", data);
+      return new EventResult({ message: "Email sent successfully!" }, 200);
+    } catch (error) {
+      console.error("Error sending email:", error);
+      return new EventResult({ message: "Error sending email" }, 500);
     }
   }
 
