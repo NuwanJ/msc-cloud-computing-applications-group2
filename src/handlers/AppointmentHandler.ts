@@ -3,6 +3,8 @@ import { AppointmentRequest } from "../../types/AppointmentTypes";
 import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
 import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
 import { EventResult } from "../lib/EventHandler";
+import { IDatabaseProvider } from "../lib/DatabaseProvider";
+import { v4 as uuidv4 } from 'uuid';
 import * as AWS from "aws-sdk";
 
 export class AppointmentHandler extends APIGatewayEventHandler {
@@ -26,26 +28,30 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       return new EventResult({ message: "Missing required fields" }, 400);
     }
 
-    const cognito = new AWS.CognitoIdentityServiceProvider({
-      region: "us-east-1",
-    });
+    // Generate a unique ID using uuid
+    const appointmentId = uuidv4();
 
-    const params = {
-      AppointmentPoolId: this.environmentProvider.getValue("APPOINTMENT_POOL_ID"),
-      AppointmentDetails: [{ Name: "PatientName", Value: patientName }]
+    const appointmentData = {
+      id: appointmentId,
+      PatientName: patientName,
+      StartTimePoint: startTimePoint,
+      EndTimePoint: endTimePoint,
     };
 
     try {
-      //TODO clarify what method from cognito to use.
-      await cognito.(params).promise();
-      return new EventResult({ message: "Appointment booked successfully" }, 201);
+      await this.databaseProvider.putItem(appointmentData)
+      return new EventResult({ message: "Appointment booked successfully", appointmentId: appointmentId },
+        201);
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error booking appointment" }, 500);
     }
   }
 
-  constructor(public environmentProvider: IEnvironmentProvider) {
+  constructor(
+    public environmentProvider: IEnvironmentProvider,
+    public databaseProvider: IDatabaseProvider
+  ) {
     super(environmentProvider);
   }
 }

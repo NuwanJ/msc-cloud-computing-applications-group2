@@ -47,6 +47,20 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
+  AppointmentTable:
+  Type: 'AWS::DynamoDB::Table'
+  Properties:
+    TableName: !Ref AppointmentTable
+    AttributeDefinitions:
+      - AttributeName: 'id'
+        AttributeType: 'S'
+    KeySchema:
+      - AttributeName: 'id'
+        KeyType: 'HASH'
+    ProvisionedThroughput:
+      ReadCapacityUnits: 5
+      WriteCapacityUnits: 5
+
   SampleFunction:
     # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Type: AWS::Serverless::Function 
