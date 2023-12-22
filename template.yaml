@@ -13,6 +13,10 @@ Parameters:
     Type: String
     Default: sampleTableName
 
+  appointmentTableName:
+    Type: String
+    Default: appointmentTableName  
+
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
@@ -48,18 +52,18 @@ Resources:
         WriteCapacityUnits: 5
 
   AppointmentTable:
-  Type: 'AWS::DynamoDB::Table'
-  Properties:
-    TableName: !Sub ${appointmentTableName}-${ApiStageName}
-    AttributeDefinitions:
-      - AttributeName: 'id'
-        AttributeType: 'S'
-    KeySchema:
-      - AttributeName: 'id'
-        KeyType: 'HASH'
-    ProvisionedThroughput:
-      ReadCapacityUnits: 5
-      WriteCapacityUnits: 5
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Sub ${appointmentTableName}-${ApiStageName}
+      AttributeDefinitions:
+        - AttributeName: 'id'
+          AttributeType: 'S'
+      KeySchema:
+        - AttributeName: 'id'
+          KeyType: 'HASH'
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
 
   SampleFunction:
     # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -99,6 +103,12 @@ Resources:
          - DynamoDBCrudPolicy:
             TableName: !Ref AppointmentTable
       Events:
+        Appointment:
+          Type: Api 
+          Properties:
+            Path: /appointment
+            Method: any
+            RestApiId: !Ref GatewayAPI
         AppointmentActions:
           Type: Api
           Properties:
