@@ -90,30 +90,21 @@ Resources:
             Method: any
             RestApiId: !Ref GatewayAPI
 
-  UserFunction:
+  AppointmentFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./
       Handler: ./dist/src/appointment-handler.default
       Policies:
-        - AWSLambdaBasicExecutionRole
-        - Statement:
-              - Effect: Allow
-                Action:
-                  - cognito-idp:AdminCreateUser
-                  - cognito-idp:AdminDeleteUser
-                Resource: 
-                  - !GetAtt UserPool.Arn
+         - DynamoDBCrudPolicy:
+            TableName: !Ref AppointmentTable
       Events:
-        UserActions:
+        AppointmentActions:
           Type: Api
           Properties:
-            Path: /user/{action}
+            Path: /appointment/{action}
             Method: any
             RestApiId: !Ref GatewayAPI
-      Environment:
-        Variables:
-          APPOINTMENT_POOL_ID: !Ref UserPool
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
