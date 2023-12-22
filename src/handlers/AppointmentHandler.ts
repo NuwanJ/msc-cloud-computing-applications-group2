@@ -4,8 +4,8 @@ import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
 import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
 import { EventResult } from "../lib/EventHandler";
 import { IDatabaseProvider } from "../lib/DatabaseProvider";
+import { DocumentClient } from "aws-sdk/clients/dynamodb";
 import { v4 as uuidv4 } from 'uuid';
-import * as AWS from "aws-sdk";
 
 export class AppointmentHandler extends APIGatewayEventHandler {
   async handle(): Promise<IEventResult> {
@@ -15,7 +15,20 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       }
     }
     else if (this.event.requestContext.httpMethod === RequestType.GET) {
-      //TODO implement retrieve, update and delete
+      if (this.getPathParam("action") == "view-all-appointments") {
+        return this.retrieveAllAppointments();
+      }
+      if (this.getPathParam("action") == "view-appointment") {
+        return this.retrieveAppointment();
+      }
+    } else if (this.event.requestContext.httpMethod === RequestType.PUT) {
+      if (this.getPathParam("action") == "update-appointment") {
+        return this.updateAppointment();
+      }
+    } else if (this.event.requestContext.httpMethod === RequestType.DELETE) {
+      if (this.getPathParam("action") == "delete-appointment") {
+        return this.deleteAppointment();
+      }
     }
 
     return new EventResult(null, 404);
@@ -46,6 +59,102 @@ export class AppointmentHandler extends APIGatewayEventHandler {
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error booking appointment" }, 500);
+    }
+  }
+
+  async retrieveAllAppointments(): Promise<IEventResult> {
+    try {
+      const scanParams: Partial<DocumentClient.ScanInput> = {
+        TableName: this.environmentProvider.getValue("AppointmentTable"),
+      };
+
+      const scanResult = await this.databaseProvider.scan(scanParams);
+
+      return new EventResult({ appointments: scanResult.Items }, 200);
+    } catch (error) {
+      console.error(error);
+      return new EventResult({ message: "Error retrieving appointments" }, 500);
+    }
+  }
+
+  async retrieveAppointment(): Promise<IEventResult> {
+    try {
+      const appointmentId = this.getPathParam("appointmentId");
+
+      if (!appointmentId) {
+        return new EventResult({ message: "Missing appointmentId parameter" }, 400);
+      }
+
+      // Fetch the existing appointment from the database
+      const existingAppointment = await this.databaseProvider.getItem<AppointmentRequest>({ id: appointmentId });
+
+      if (!existingAppointment) {
+        return new EventResult({ message: "Appointment not found" }, 404);
+      }
+      return new EventResult({ appointment: existingAppointment }, 200);
+    } catch (error) {
+      console.error(error);
+      return new EventResult({ message: "Error retrieving appointments" }, 500);
+    }
+  }
+
+
+  async updateAppointment(): Promise<IEventResult> {
+    try {
+      const appointmentId = this.getPathParam("appointmentId");
+
+      if (!appointmentId) {
+        return new EventResult({ message: "Missing appointmentId parameter" }, 400);
+      }
+
+      const { patientName, startTimePoint, endTimePoint } = <AppointmentRequest>this.getBody();
+
+      if (!patientName && !startTimePoint && !endTimePoint) {
+        return new EventResult({ message: "No fields to update" }, 400);
+      }
+
+      // Fetch the existing appointment from the database
+      const existingAppointment = await this.databaseProvider.getItem<AppointmentRequest>({ id: appointmentId });
+
+      if (!existingAppointment) {
+        return new EventResult({ message: "Appointment not found" }, 404);
+      }
+
+      if (patientName) {
+        existingAppointment.patientName = patientName;
+      }
+
+      if (startTimePoint) {
+        existingAppointment.startTimePoint = startTimePoint;
+      }
+
+      if (endTimePoint) {
+        existingAppointment.endTimePoint = endTimePoint;
+      }
+
+      await this.databaseProvider.updateItem(appointmentId, existingAppointment);
+
+      return new EventResult({ message: "Appointment updated successfully" }, 200);
+    } catch (error) {
+      console.error(error);
+      return new EventResult({ message: "Error updating appointment" }, 500);
+    }
+  }
+
+  async deleteAppointment(): Promise<IEventResult> {
+    try {
+      const appointmentId = this.getPathParam("appointmentId");
+
+      if (!appointmentId) {
+        return new EventResult({ message: "Appointment ID not provided" }, 400);
+      }
+
+      await this.databaseProvider.deleteItem(appointmentId);
+
+      return new EventResult({ message: "Appointment deleted successfully" }, 200);
+    } catch (error) {
+      console.error(error);
+      return new EventResult({ message: "Error deleting appointment" }, 500);
     }
   }
 
