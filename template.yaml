@@ -105,6 +105,12 @@ Resources:
             Path: /appointment/{action}
             Method: any
             RestApiId: !Ref GatewayAPI
+        AppointmentSubActions:
+          Type: Api
+          Properties:
+            Path: /appointment/{action}/{appointmentId}
+            Method: any
+            RestApiId: !Ref GatewayAPI
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
