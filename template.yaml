@@ -50,7 +50,7 @@ Resources:
   AppointmentTable:
   Type: 'AWS::DynamoDB::Table'
   Properties:
-    TableName: !Ref AppointmentTable
+    TableName: !Sub ${appointmentTableName}-${ApiStageName}
     AttributeDefinitions:
       - AttributeName: 'id'
         AttributeType: 'S'

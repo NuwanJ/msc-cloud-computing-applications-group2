@@ -15,14 +15,14 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       }
     }
     else if (this.event.requestContext.httpMethod === RequestType.GET) {
-      //TODO implement retrieve
+      //TODO implement retrieve, update and delete
     }
 
     return new EventResult(null, 404);
   }
 
   async bookAppointment(): Promise<IEventResult> {
-    const { patientName, startTimePoint, endTimePoint } = <AppointmentRequest>this.getBody();
+    const { patientName, patientId, startTimePoint, endTimePoint } = <AppointmentRequest>this.getBody();
 
     if (!patientName || !startTimePoint || !endTimePoint) {
       return new EventResult({ message: "Missing required fields" }, 400);
@@ -33,6 +33,7 @@ export class AppointmentHandler extends APIGatewayEventHandler {
 
     const appointmentData = {
       id: appointmentId,
+      PatientId: patientId,
       PatientName: patientName,
       StartTimePoint: startTimePoint,
       EndTimePoint: endTimePoint,
