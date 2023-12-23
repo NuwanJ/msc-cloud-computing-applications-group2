@@ -43,7 +43,9 @@ export class UserHandler extends APIGatewayEventHandler {
     const params = {
       UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"),
       Username: username,
-      UserAttributes: [{ Name: "email", Value: email }],
+      UserAttributes: [
+        { Name: "email", Value: email },
+      ],
       TemporaryPassword: password,
     };
 
@@ -53,6 +55,24 @@ export class UserHandler extends APIGatewayEventHandler {
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error creating user" }, 500);
+    }
+  }
+
+  async getUser(userId: string): Promise<any> {
+    const cognito = new AWS.CognitoIdentityServiceProvider({
+      region: "us-east-1",
+    });
+    const params = {
+      UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"),
+      Username: userId,
+    };
+
+    try {
+      const result = await cognito.adminGetUser(params).promise();
+      return result;
+    } catch (error) {
+      console.error(error);
+      return new EventResult({ message: "Error fetching user" }, 500);
     }
   }
 
