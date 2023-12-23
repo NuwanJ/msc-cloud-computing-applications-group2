@@ -5,7 +5,7 @@ version = 0.1
 [default]
 [default.global]
 [default.global.parameters]
-stack_name = "cloud-project-v1"
+stack_name = "cloud-project-dev"
 
 [default.build]
 [default.build.parameters]
@@ -38,13 +38,15 @@ warm_containers = "EAGER"
 [default.local_start_lambda.parameters]
 warm_containers = "EAGER"
 
-[dev]
-[dev.deploy]
-[dev.deploy.parameters]
-stack_name = "cloud-project"
-s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-fynhvetxqjw"
-s3_prefix = "cloud-project"
+
+[prod]
+[prod.deploy]
+[prod.deploy.parameters]
+stack_name = "cloud-project-prod"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-ehddinlwucrq"
+s3_prefix = "cloud-project-prod"
 region = "us-east-1"
-confirm_changeset = false
+profile = "cloud"
 capabilities = "CAPABILITY_IAM"
+parameter_overrides = "ApiStageName=\"prod\""
 image_repositories = []
