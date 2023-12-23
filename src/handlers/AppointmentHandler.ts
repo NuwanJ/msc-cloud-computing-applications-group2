@@ -5,7 +5,8 @@ import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
 import { EventResult } from "../lib/EventHandler";
 import { IDatabaseProvider } from "../lib/DatabaseProvider";
 import { DocumentClient } from "aws-sdk/clients/dynamodb";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
+import moment from "moment-timezone";
 
 export class AppointmentHandler extends APIGatewayEventHandler {
   async handle(): Promise<IEventResult> {
@@ -13,8 +14,7 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       if (this.getPathParam("action") == "book-appointment") {
         return this.bookAppointment();
       }
-    }
-    else if (this.event.requestContext.httpMethod === RequestType.GET) {
+    } else if (this.event.requestContext.httpMethod === RequestType.GET) {
       if (this.getPathParam("action") == "view-all-appointments") {
         return this.retrieveAllAppointments();
       }
@@ -35,7 +35,9 @@ export class AppointmentHandler extends APIGatewayEventHandler {
   }
 
   async bookAppointment(): Promise<IEventResult> {
-    const { patientName, patientId, startTimePoint, endTimePoint } = <AppointmentRequest>this.getBody();
+    const { patientName, patientId, startTimePoint, endTimePoint } = <
+      AppointmentRequest
+    >this.getBody();
 
     if (!patientName || !startTimePoint || !endTimePoint) {
       return new EventResult({ message: "Missing required fields" }, 400);
@@ -48,14 +50,19 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       id: appointmentId,
       PatientId: patientId,
       PatientName: patientName,
-      StartTimePoint: startTimePoint,
-      EndTimePoint: endTimePoint,
+      startTime: moment(startTimePoint).format("YYYY-MM-DD HH:mm:ss"),
+      endTime: moment(endTimePoint).format("YYYY-MM-DD HH:mm:ss"),
     };
 
     try {
-      await this.databaseProvider.putItem(appointmentData)
-      return new EventResult({ message: "Appointment booked successfully", appointmentId: appointmentId },
-        201);
+      await this.databaseProvider.putItem(appointmentData);
+      return new EventResult(
+        {
+          message: "Appointment booked successfully",
+          appointmentId: appointmentId,
+        },
+        201
+      );
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error booking appointment" }, 500);
@@ -82,11 +89,17 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       const appointmentId = this.getPathParam("appointmentId");
 
       if (!appointmentId) {
-        return new EventResult({ message: "Missing appointmentId parameter" }, 400);
+        return new EventResult(
+          { message: "Missing appointmentId parameter" },
+          400
+        );
       }
 
       // Fetch the existing appointment from the database
-      const existingAppointment = await this.databaseProvider.getItem<AppointmentRequest>({ id: appointmentId });
+      const existingAppointment =
+        await this.databaseProvider.getItem<AppointmentRequest>({
+          id: appointmentId,
+        });
 
       if (!existingAppointment) {
         return new EventResult({ message: "Appointment not found" }, 404);
@@ -98,23 +111,30 @@ export class AppointmentHandler extends APIGatewayEventHandler {
     }
   }
 
-
   async updateAppointment(): Promise<IEventResult> {
     try {
       const appointmentId = this.getPathParam("appointmentId");
 
       if (!appointmentId) {
-        return new EventResult({ message: "Missing appointmentId parameter" }, 400);
+        return new EventResult(
+          { message: "Missing appointmentId parameter" },
+          400
+        );
       }
 
-      const { patientName, startTimePoint, endTimePoint } = <AppointmentRequest>this.getBody();
+      const { patientName, startTimePoint, endTimePoint } = <
+        AppointmentRequest
+      >this.getBody();
 
       if (!patientName && !startTimePoint && !endTimePoint) {
         return new EventResult({ message: "No fields to update" }, 400);
       }
 
       // Fetch the existing appointment from the database
-      const existingAppointment = await this.databaseProvider.getItem<AppointmentRequest>({ id: appointmentId });
+      const existingAppointment =
+        await this.databaseProvider.getItem<AppointmentRequest>({
+          id: appointmentId,
+        });
 
       if (!existingAppointment) {
         return new EventResult({ message: "Appointment not found" }, 404);
@@ -132,9 +152,15 @@ export class AppointmentHandler extends APIGatewayEventHandler {
         existingAppointment.endTimePoint = endTimePoint;
       }
 
-      await this.databaseProvider.updateItem(appointmentId, existingAppointment);
+      await this.databaseProvider.updateItem(
+        appointmentId,
+        existingAppointment
+      );
 
-      return new EventResult({ message: "Appointment updated successfully" }, 200);
+      return new EventResult(
+        { message: "Appointment updated successfully" },
+        200
+      );
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error updating appointment" }, 500);
@@ -151,7 +177,10 @@ export class AppointmentHandler extends APIGatewayEventHandler {
 
       await this.databaseProvider.deleteItem(appointmentId);
 
-      return new EventResult({ message: "Appointment deleted successfully" }, 200);
+      return new EventResult(
+        { message: "Appointment deleted successfully" },
+        200
+      );
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error deleting appointment" }, 500);
@@ -163,5 +192,8 @@ export class AppointmentHandler extends APIGatewayEventHandler {
     public databaseProvider: IDatabaseProvider
   ) {
     super(environmentProvider);
+
+    // Set timezone
+    moment.tz.setDefault(TIMEZONE);
   }
 }
