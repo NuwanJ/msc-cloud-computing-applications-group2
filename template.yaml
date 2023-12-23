@@ -13,9 +13,9 @@ Parameters:
     Type: String
     Default: sampleTableName
 
-  appointmentTableName:
+  AppointmentsTableName:
     Type: String
-    Default: appointmentTableName  
+    Default: appointments
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -27,6 +27,7 @@ Globals:
       Variables:
         Stage: !Ref ApiStageName
         SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
+        AppointmentsTableName: !Sub ${AppointmentsTable}-${ApiStageName}
   Api:
     TracingEnabled: true
 
@@ -51,10 +52,10 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
-  AppointmentTable:
+  AppointmentsTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
-      TableName: !Sub ${appointmentTableName}-${ApiStageName}
+      TableName: !Sub ${AppointmentsTableName}-${ApiStageName}
       AttributeDefinitions:
         - AttributeName: 'id'
           AttributeType: 'S'
@@ -101,7 +102,7 @@ Resources:
       Handler: ./dist/src/appointment-handler.default
       Policies:
          - DynamoDBCrudPolicy:
-            TableName: !Ref AppointmentTable
+            TableName: !Ref AppointmentsTable
       Events:
         Appointment:
           Type: Api 
@@ -144,9 +145,10 @@ Resources:
     DependsOn: ApplicationResourceGroup
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   SampleApi:
     Description: API Gateway Endpoint URL
     Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/sample/"
+
+  AppointmentsTable:
+    Description: DynamoDB Table
+    Value: !Ref AppointmentsTableName

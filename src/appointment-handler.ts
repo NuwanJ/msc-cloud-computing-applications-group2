@@ -4,12 +4,12 @@ import { DynamoDBServiceProvider } from "./lib/DatabaseProvider";
 
 const environmentProvider = new EnvironmentProvider();
 const dynamodbProvider = new DynamoDBServiceProvider(
-    environmentProvider.getValue("AppointmentTable")
+  environmentProvider.getValue("AppointmentsTable")
 );
 
 const handler = new AppointmentHandler(
-    environmentProvider,
-    dynamodbProvider
+  environmentProvider,
+  dynamodbProvider
 ).getHandler();
 
 export default handler;
