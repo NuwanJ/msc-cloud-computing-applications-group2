@@ -70,8 +70,7 @@ export class UserHandler extends APIGatewayEventHandler {
     };
     try {
       const result = await cognito.adminGetUser(params).promise();
-      console.log("User fetched successfully:", result);
-      return result;
+      return new EventResult(result, 200);
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error fetching user" }, 500);
