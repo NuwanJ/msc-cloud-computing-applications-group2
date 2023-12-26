@@ -8,6 +8,8 @@ import * as AWS from "aws-sdk";
 export class UserHandler extends APIGatewayEventHandler {
   async handle(): Promise<IEventResult> {
     if (this.event.requestContext.httpMethod === RequestType.GET) {
+      const userId = this.getPathParam("userId")
+      return this.getUser(userId)
       // Nothing for now
     } else if (this.event.requestContext.httpMethod === RequestType.POST) {
       if (this.getPathParam("action") == "register") {
