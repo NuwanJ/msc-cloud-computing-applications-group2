@@ -23,8 +23,23 @@ export class UserHandler extends APIGatewayEventHandler {
   }
 
   async loginUser(): Promise<IEventResult> {
+    const { username, password } = <UserRegisterRequest>this.getBody();
+
+    const cognito = new AWS.CognitoIdentityServiceProvider({
+      region: "us-east-1",
+    });
+
+    const params = {
+      AuthFlow: 'USER_PASSWORD_AUTH',
+      ClientId: this.environmentProvider.getValue("USER_POOL_CLIENT"),
+      AuthParameters: {
+        USERNAME: username,
+        PASSWORD: password
+      }
+    }
     try {
-      return new EventResult({ message: "User login" }, 201);
+      await cognito.initiateAuth(params).promise();
+      return new EventResult({ message: "User logged in successfully" }, 201);
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error login user" }, 500);

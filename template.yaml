@@ -42,6 +42,16 @@ Resources:
       AutoVerifiedAttributes:
         - email
 
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: CloudUserPoolClient
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
   SampleTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
@@ -110,6 +120,7 @@ Resources:
       Environment:
         Variables:
           USER_POOL_ID: !Ref UserPool
+          USER_POOL_CLIENT: !Ref UserPoolClient
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
