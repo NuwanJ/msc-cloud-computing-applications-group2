@@ -97,7 +97,7 @@ Resources:
               Action:
                 - cognito-idp:AdminCreateUser
                 - cognito-idp:AdminDeleteUser
-                - congito-idp:AdminGetUser
+                - cognito-idp:AdminGetUser
               Resource:
                 - !GetAtt UserPool.Arn
       Events:

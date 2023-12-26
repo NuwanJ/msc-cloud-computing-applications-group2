@@ -8,8 +8,8 @@ import * as AWS from "aws-sdk";
 export class UserHandler extends APIGatewayEventHandler {
   async handle(): Promise<IEventResult> {
     if (this.event.requestContext.httpMethod === RequestType.GET) {
-      const userId = this.getPathParam("userId")
-      return this.getUser(userId)
+      const userId =this.getPathParam("action");
+      return this.getUser(userId);
       // Nothing for now
     } else if (this.event.requestContext.httpMethod === RequestType.POST) {
       if (this.getPathParam("action") == "register") {
@@ -60,7 +60,7 @@ export class UserHandler extends APIGatewayEventHandler {
     }
   }
 
-  async getUser(userId: string): Promise<any> {
+  async getUser(userId: any): Promise<any> {
     const cognito = new AWS.CognitoIdentityServiceProvider({
       region: "us-east-1",
     });
@@ -68,9 +68,9 @@ export class UserHandler extends APIGatewayEventHandler {
       UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"),
       Username: userId,
     };
-
     try {
       const result = await cognito.adminGetUser(params).promise();
+      console.log("User fetched successfully:", result);
       return result;
     } catch (error) {
       console.error(error);

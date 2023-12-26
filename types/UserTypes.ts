@@ -8,3 +8,7 @@ export type UserLoginRequest = {
   username: string;
   password: string;
 };
+
+export type UserGetRequest = {
+  userId: string;
+}
