@@ -32,6 +32,12 @@ Resources:
     Properties:
       Name: !Sub cloud-project-${ApiStageName}-api
       StageName: !Ref ApiStageName # This is where we can set stage name
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UserPool.Arn
+            IdentitySource: method.request.header.Authorization
 
   UserPool:
     Type: AWS::Cognito::UserPool
@@ -117,6 +123,8 @@ Resources:
             Path: /user/{action}
             Method: any
             RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
       Environment:
         Variables:
           USER_POOL_ID: !Ref UserPool

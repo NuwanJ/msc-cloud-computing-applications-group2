@@ -19,8 +19,13 @@ lint = true
 [default.deploy]
 [default.deploy.parameters]
 capabilities = "CAPABILITY_IAM"
-confirm_changeset = false
+confirm_changeset = true
 resolve_s3 = true
+s3_prefix = "cloud-project-dev"
+region = "us-east-1"
+disable_rollback = true
+parameter_overrides = "ApiStageName=\"dev\" sampleTableName=\"sampleTableName\""
+image_repositories = []
 
 [default.package]
 [default.package.parameters]

@@ -10,7 +10,6 @@ export class UserHandler extends APIGatewayEventHandler {
     if (this.event.requestContext.httpMethod === RequestType.GET) {
       const userId =this.getPathParam("action");
       return this.getUser(userId);
-      // Nothing for now
     } else if (this.event.requestContext.httpMethod === RequestType.POST) {
       if (this.getPathParam("action") == "register") {
         return this.createUser();
@@ -75,7 +74,7 @@ export class UserHandler extends APIGatewayEventHandler {
     }
   }
 
-  async getUser(userId: any): Promise<any> {
+  async getUser(userId: string): Promise<any> {
     const cognito = new AWS.CognitoIdentityServiceProvider({
       region: "us-east-1",
     });
