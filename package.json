@@ -15,6 +15,7 @@
   "dependencies": {
     "aws-sdk": "^2.1522.0",
     "esbuild": "^0.14.14",
+    "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21"
   },
   "devDependencies": {

@@ -1,7 +1,10 @@
 export type UserRegisterRequest = {
   username: string;
-  email: string;
   password: string;
+};
+
+export type RefreshTokenRequest = {
+  refreshToken: string;
 };
 
 export type UserLoginRequest = {
@@ -11,4 +14,11 @@ export type UserLoginRequest = {
 
 export type UserGetRequest = {
   userId: string;
-}
+};
+
+export type AuthInfo = {
+  accessToken: string;
+  type: string;
+  expiresIn: number;
+  refreshToken: string;
+};

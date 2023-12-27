@@ -10,6 +10,8 @@ import {
   Level,
 } from "../../types/APIGatewayTypes";
 import { EventHandler, EventResult } from "./EventHandler";
+import { IEnvironmentProvider } from "./EnvironmentProvider";
+import { ISessionProvider } from "./SessionProvider";
 
 export interface IAPIGatewayEventHandler {
   getHandler(): APIGatewayProxyHandler;
@@ -92,6 +94,12 @@ export abstract class APIGatewayEventHandler
       : null;
   }
 
+  getToken(): string {
+    return this.event.headers.Authorization
+      ? this.event.headers.Authorization?.split(" ")[1]
+      : null;
+  }
+
   getQueryStringParameters(): Record<string, string> {
     if (!this.event) {
       throw new Error("Event is undefined");
@@ -130,11 +138,20 @@ export abstract class APIGatewayEventHandler
     this.setBody();
   }
 
+  setSessionToken(): void {
+    if (this.sessionProvider) {
+      this.sessionProvider.setToken(this.getToken());
+    } else {
+      console.error("setSessionToken: Session not found");
+    }
+  }
+
   getHandler(): APIGatewayProxyHandler {
     return async (
       event: APIGatewayProxyEvent
     ): Promise<APIGatewayProxyResult> => {
       this.setEvent(event);
+      this.setSessionToken();
 
       try {
         console.log({
@@ -194,5 +211,12 @@ export abstract class APIGatewayEventHandler
         error: JSON.parse(JSON.stringify(e, Object.getOwnPropertyNames(e))),
       }),
     };
+  }
+
+  constructor(
+    public environmentProvider: IEnvironmentProvider,
+    public sessionProvider?: ISessionProvider
+  ) {
+    super(environmentProvider);
   }
 }
