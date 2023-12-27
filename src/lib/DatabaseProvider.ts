@@ -108,24 +108,21 @@ export class DynamoDBServiceProvider implements IDatabaseProvider {
       })
       .join(",")}`;
 
-
-    const expressionAttributeNames: { [key: string]: string } = {};
-    const expressionAttributeValues: { [key: string]: any } = {};  
-
-    for (const key in data) {
-      const attributeName = `#${key}`;
-      const attributeValue = `:${key}`;
-  
-      expressionAttributeNames[attributeName] = key;
-      expressionAttributeValues[attributeValue] = data[key];
-    }
-
     const params: DynamoDB.DocumentClient.UpdateItemInput = {
       TableName: this.tableName,
       Key: partitionKey,
       UpdateExpression: updateExpression,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
+      ExpressionAttributeNames: mapKeys(
+        mapValues(data, (v, k) => {
+          return k;
+        }),
+        (v, k) => {
+          return `#${k}`;
+        }
+      ),
+      ExpressionAttributeValues: mapKeys(data, (v, k) => {
+        return `:${k}`;
+      }),
     };
 
     try {
