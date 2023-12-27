@@ -188,7 +188,20 @@ export class UserHandler extends APIGatewayEventHandler {
 
       try {
         const result = await this.cognito.adminGetUser(params).promise();
-        return new EventResult(result, 200);
+        return new EventResult(
+          {
+            username: result.Username,
+            email: result.UserAttributes.filter((attribute) => {
+              return attribute.Name == "email";
+            })[0].Value,
+            status: result.UserStatus,
+            enabled: result.Enabled,
+            attributes: result.UserAttributes,
+            createdAt: result.UserCreateDate,
+            modifiedAt: result.UserLastModifiedDate,
+          },
+          200
+        );
       } catch (error) {
         console.error(error);
         return new EventResult({ message: "Error fetching user", error }, 500);
