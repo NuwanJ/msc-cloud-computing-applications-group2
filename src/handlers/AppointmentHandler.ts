@@ -13,6 +13,9 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       if (this.getPathParam("action") == "book-appointment") {
         return this.bookAppointment();
       }
+      if (this.getPathParam("action") == "update-appointment") {
+        return this.updateAppointment();
+      }
     }
     else if (this.event.requestContext.httpMethod === RequestType.GET) {
       if (this.getPathParam("action") == "view-all-appointments") {
@@ -21,11 +24,8 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       if (this.getPathParam("action") == "view-appointment") {
         return this.retrieveAppointment();
       }
-    } else if (this.event.requestContext.httpMethod === RequestType.PUT) {
-      if (this.getPathParam("action") == "update-appointment") {
-        return this.updateAppointment();
-      }
-    } else if (this.event.requestContext.httpMethod === RequestType.DELETE) {
+    }
+    else if (this.event.requestContext.httpMethod === RequestType.DELETE) {
       if (this.getPathParam("action") == "delete-appointment") {
         return this.deleteAppointment();
       }
