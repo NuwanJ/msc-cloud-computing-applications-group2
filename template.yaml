@@ -27,7 +27,7 @@ Globals:
       Variables:
         Stage: !Ref ApiStageName
         SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
-        AppointmentsTableName: !Sub ${AppointmentsTable}-${ApiStageName}
+        AppointmentTableName: !Sub ${appointmentTableName}-${ApiStageName}
   Api:
     TracingEnabled: true
 

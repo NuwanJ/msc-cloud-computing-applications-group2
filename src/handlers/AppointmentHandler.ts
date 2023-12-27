@@ -13,6 +13,9 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       if (this.getPathParam("action") == "book-appointment") {
         return this.bookAppointment();
       }
+      if (this.getPathParam("action") == "update-appointment") {
+        return this.updateAppointment();
+      }
     }
     else if (this.event.requestContext.httpMethod === RequestType.GET) {
       if (this.getPathParam("action") == "view-all-appointments") {
@@ -21,11 +24,8 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       if (this.getPathParam("action") == "view-appointment") {
         return this.retrieveAppointment();
       }
-    } else if (this.event.requestContext.httpMethod === RequestType.PUT) {
-      if (this.getPathParam("action") == "update-appointment") {
-        return this.updateAppointment();
-      }
-    } else if (this.event.requestContext.httpMethod === RequestType.DELETE) {
+    }
+    else if (this.event.requestContext.httpMethod === RequestType.DELETE) {
       if (this.getPathParam("action") == "delete-appointment") {
         return this.deleteAppointment();
       }
@@ -107,11 +107,7 @@ export class AppointmentHandler extends APIGatewayEventHandler {
         return new EventResult({ message: "Missing appointmentId parameter" }, 400);
       }
 
-      const { patientName, startTimePoint, endTimePoint } = <AppointmentRequest>this.getBody();
-
-      if (!patientName && !startTimePoint && !endTimePoint) {
-        return new EventResult({ message: "No fields to update" }, 400);
-      }
+      const updatedValues = { ...this.getBody(), appointmentId };
 
       // Fetch the existing appointment from the database
       const existingAppointment = await this.databaseProvider.getItem<AppointmentRequest>({ id: appointmentId });
@@ -120,19 +116,7 @@ export class AppointmentHandler extends APIGatewayEventHandler {
         return new EventResult({ message: "Appointment not found" }, 404);
       }
 
-      if (patientName) {
-        existingAppointment.patientName = patientName;
-      }
-
-      if (startTimePoint) {
-        existingAppointment.startTimePoint = startTimePoint;
-      }
-
-      if (endTimePoint) {
-        existingAppointment.endTimePoint = endTimePoint;
-      }
-
-      await this.databaseProvider.updateItem(appointmentId, existingAppointment);
+      await this.databaseProvider.updateItem(appointmentId, updatedValues);
 
       return new EventResult({ message: "Appointment updated successfully" }, 200);
     } catch (error) {
