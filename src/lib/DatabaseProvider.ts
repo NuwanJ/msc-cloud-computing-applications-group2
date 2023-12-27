@@ -98,10 +98,7 @@ export class DynamoDBServiceProvider implements IDatabaseProvider {
     const partitionKey: DocumentClient.Key =
       typeof key === "string" ? { id: key } : key;
 
-    // Convert camelCase attribute names to PascalCase
-    const pascalCaseData = mapKeys(data, (v, k) => this.toPascalCase(k));
-
-    const updateExpressionKeys = Object.keys(pascalCaseData).map((k) => {
+    const updateExpressionKeys = Object.keys(data).map((k) => {
       return `#${k}=:${k}`;
     });
 
@@ -116,14 +113,14 @@ export class DynamoDBServiceProvider implements IDatabaseProvider {
       Key: partitionKey,
       UpdateExpression: updateExpression,
       ExpressionAttributeNames: mapKeys(
-        mapValues(pascalCaseData, (v, k) => {
+        mapValues(data, (v, k) => {
           return k;
         }),
         (v, k) => {
           return `#${k}`;
         }
       ),
-      ExpressionAttributeValues: mapKeys(pascalCaseData, (v, k) => {
+      ExpressionAttributeValues: mapKeys(data, (v, k) => {
         return `:${k}`;
       }),
     };
@@ -144,10 +141,6 @@ export class DynamoDBServiceProvider implements IDatabaseProvider {
       console.error("Error updating item in DynamoDB:", error);
       throw error;
     }
-  }
-
-  private toPascalCase(camelCase: string): string {
-    return camelCase.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase();
   }
 
   async deleteItem(key: string | DocumentClient.Key): Promise<object> {
