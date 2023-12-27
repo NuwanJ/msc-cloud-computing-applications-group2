@@ -107,11 +107,7 @@ export class AppointmentHandler extends APIGatewayEventHandler {
         return new EventResult({ message: "Missing appointmentId parameter" }, 400);
       }
 
-      const { patientName, startTimePoint, endTimePoint } = <AppointmentRequest>this.getBody();
-
-      if (!patientName && !startTimePoint && !endTimePoint) {
-        return new EventResult({ message: "No fields to update" }, 400);
-      }
+      const updatedValues = { ...this.getBody(), appointmentId };
 
       // Fetch the existing appointment from the database
       const existingAppointment = await this.databaseProvider.getItem<AppointmentRequest>({ id: appointmentId });
@@ -120,19 +116,7 @@ export class AppointmentHandler extends APIGatewayEventHandler {
         return new EventResult({ message: "Appointment not found" }, 404);
       }
 
-      if (patientName) {
-        existingAppointment.patientName = patientName;
-      }
-
-      if (startTimePoint) {
-        existingAppointment.startTimePoint = startTimePoint;
-      }
-
-      if (endTimePoint) {
-        existingAppointment.endTimePoint = endTimePoint;
-      }
-
-      await this.databaseProvider.updateItem(appointmentId, existingAppointment);
+      await this.databaseProvider.updateItem(appointmentId, updatedValues);
 
       return new EventResult({ message: "Appointment updated successfully" }, 200);
     } catch (error) {
