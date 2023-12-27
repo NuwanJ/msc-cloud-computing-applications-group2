@@ -88,18 +88,24 @@ Resources:
             Path: /sample
             Method: any
             RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
         SampleActions:
           Type: Api
           Properties:
             Path: /sample/{action}
             Method: any
             RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
         SampleSubActions:
           Type: Api
           Properties:
             Path: /sample/{action}/{subAction}
             Method: any
             RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   UserFunction:
     Type: AWS::Serverless::Function
@@ -114,6 +120,7 @@ Resources:
                 - cognito-idp:AdminCreateUser
                 - cognito-idp:AdminDeleteUser
                 - cognito-idp:AdminGetUser
+                - cognito-idp:AdminSetUserPassword
               Resource:
                 - !GetAtt UserPool.Arn
       Events:
@@ -124,7 +131,7 @@ Resources:
             Method: any
             RestApiId: !Ref GatewayAPI
             Auth:
-              Authorizer: CognitoAuthorizer
+              Authorizer: NONE
       Environment:
         Variables:
           USER_POOL_ID: !Ref UserPool

@@ -8,7 +8,7 @@ import * as AWS from "aws-sdk";
 export class UserHandler extends APIGatewayEventHandler {
   async handle(): Promise<IEventResult> {
     if (this.event.requestContext.httpMethod === RequestType.GET) {
-      const userId =this.getPathParam("action");
+      const userId = this.getPathParam("action");
       return this.getUser(userId);
     } else if (this.event.requestContext.httpMethod === RequestType.POST) {
       if (this.getPathParam("action") == "register") {
@@ -29,16 +29,21 @@ export class UserHandler extends APIGatewayEventHandler {
     });
 
     const params = {
-      AuthFlow: 'USER_PASSWORD_AUTH',
+      AuthFlow: "USER_PASSWORD_AUTH",
       ClientId: this.environmentProvider.getValue("USER_POOL_CLIENT"),
       AuthParameters: {
         USERNAME: username,
-        PASSWORD: password
-      }
-    }
+        PASSWORD: password,
+      },
+    };
     try {
-      await cognito.initiateAuth(params).promise();
-      return new EventResult({ message: "User logged in successfully" }, 201);
+      const response = await cognito.initiateAuth(params).promise();
+
+      const token = response.AuthenticationResult?.IdToken;
+      return new EventResult(
+        { message: "User logged in successfully", token: token },
+        201
+      );
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error login user" }, 500);
@@ -59,14 +64,21 @@ export class UserHandler extends APIGatewayEventHandler {
     const params = {
       UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"),
       Username: username,
-      UserAttributes: [
-        { Name: "email", Value: email },
-      ],
+      UserAttributes: [{ Name: "email", Value: email }],
       TemporaryPassword: password,
+      MessageAction: "SUPPRESS",
     };
 
     try {
       await cognito.adminCreateUser(params).promise();
+      await cognito
+        .adminSetUserPassword({
+          UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"),
+          Username: username,
+          Password: password,
+          Permanent: true,
+        })
+        .promise();
       return new EventResult({ message: "User created successfully" }, 201);
     } catch (error) {
       console.error(error);
