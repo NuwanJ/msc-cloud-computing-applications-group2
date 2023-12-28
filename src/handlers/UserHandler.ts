@@ -17,7 +17,7 @@ export class UserHandler extends APIGatewayEventHandler {
 
   async handle(): Promise<IEventResult> {
     if (this.event.requestContext.resourcePath == "/profile/{action}") {
-      if (this.event.requestContext.httpMethod === RequestType.GET) {
+      if (this.getMethod() === RequestType.GET) {
         if (this.getPathParam("action") == "info") {
           return this.profile();
         } else {
@@ -25,7 +25,7 @@ export class UserHandler extends APIGatewayEventHandler {
         }
       }
     } else if (this.event.requestContext.resourcePath == "/user/{action}") {
-      if (this.event.requestContext.httpMethod === RequestType.POST) {
+      if (this.getMethod() === RequestType.POST) {
         if (this.getPathParam("action") == "register") {
           return this.register();
         } else if (this.getPathParam("action") == "login") {
