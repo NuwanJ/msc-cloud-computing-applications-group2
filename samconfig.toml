@@ -19,8 +19,8 @@ lint = true
 [default.deploy]
 [default.deploy.parameters]
 capabilities = "CAPABILITY_IAM"
-confirm_changeset = false
 resolve_s3 = true
+s3_prefix = "cloud-project-dev"
 
 [default.package]
 [default.package.parameters]
@@ -37,7 +37,6 @@ warm_containers = "EAGER"
 [default.local_start_lambda]
 [default.local_start_lambda.parameters]
 warm_containers = "EAGER"
-
 
 [prod]
 [prod.deploy]
