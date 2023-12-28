@@ -23,6 +23,7 @@ Globals:
       Variables:
         Stage: !Ref ApiStageName
         SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
+        Region: !Sub ${AWS::Region}
   Api:
     TracingEnabled: true
 
@@ -31,7 +32,32 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       Name: !Sub cloud-project-${ApiStageName}-api
-      StageName: !Ref ApiStageName # This is where we can set stage name
+      StageName: !Ref ApiStageName 
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UserPool.Arn
+            IdentitySource: method.request.header.Authorization
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: AppUsers
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: CloudUserPoolClient
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
 
   SampleTable:
     Type: "AWS::DynamoDB::Table"
@@ -49,12 +75,12 @@ Resources:
 
   SampleFunction:
     # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-    Type: AWS::Serverless::Function 
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./
       Handler: ./dist/src/sample-handler.default
       Policies:
-         - DynamoDBCrudPolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref SampleTable
       Events:
         Sample:
@@ -63,28 +89,71 @@ Resources:
             Path: /sample
             Method: any
             RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
         SampleActions:
           Type: Api
           Properties:
             Path: /sample/{action}
             Method: any
             RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
         SampleSubActions:
           Type: Api
           Properties:
             Path: /sample/{action}/{subAction}
             Method: any
             RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
 
+  UserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: ./dist/src/user-handler.default
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminDeleteUser
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminSetUserPassword
+              Resource:
+                - !GetAtt UserPool.Arn
+      Events:
+        UserActions:
+          Type: Api
+          Properties:
+            Path: /user/{action}
+            Method: any
+            RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: NONE
+        ProfileActions:
+          Type: Api
+          Properties:
+            Path: /profile/{action}
+            Method: any
+            RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref UserPool
+          USER_POOL_CLIENT: !Ref UserPoolClient
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
     Properties:
       Name:
         Fn::Join:
-        - ""
-        - - ApplicationInsights-SAM-
-          - Ref: AWS::StackName
+          - ""
+          - - ApplicationInsights-SAM-
+            - Ref: AWS::StackName
       ResourceQuery:
         Type: CLOUDFORMATION_STACK_1_0
   ApplicationInsightsMonitoring:
@@ -92,9 +161,9 @@ Resources:
     Properties:
       ResourceGroupName:
         Fn::Join:
-        - ""
-        - - ApplicationInsights-SAM-
-          - Ref: AWS::StackName
+          - ""
+          - - ApplicationInsights-SAM-
+            - Ref: AWS::StackName
       AutoConfigurationEnabled: "true"
     DependsOn: ApplicationResourceGroup
 
@@ -103,5 +172,5 @@ Outputs:
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   SampleApi:
-    Description: API Gateway Endpoint URL
-    Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/sample/"
+    Description: API Gateway Endpoint
+    Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/"

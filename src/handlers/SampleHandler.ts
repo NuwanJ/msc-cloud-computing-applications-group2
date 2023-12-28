@@ -3,7 +3,7 @@ import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
 import { IDatabaseProvider } from "../lib/DatabaseProvider";
 import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
 import { EventResult } from "../lib/EventHandler";
-
+import { ISessionProvider } from "../lib/SessionProvider";
 export class SampleHandler extends APIGatewayEventHandler {
   // Path formats:
   // - /sample
@@ -105,6 +105,7 @@ export class SampleHandler extends APIGatewayEventHandler {
             query: this.getQueryStringParameters(),
             path: this.getPathParameters(),
           },
+          session: this.sessionProvider.decodeToken(),
         },
         200
       );
@@ -117,6 +118,7 @@ export class SampleHandler extends APIGatewayEventHandler {
             path: this.getPathParameters(),
             body: this.getBody(),
           },
+          session: this.sessionProvider.decodeToken(),
         },
         200
       );
@@ -128,13 +130,20 @@ export class SampleHandler extends APIGatewayEventHandler {
   }
 
   async sampleFunction(): Promise<IEventResult> {
-    return new EventResult({ Sample: "This is a sample function" }, 200);
+    return new EventResult(
+      {
+        Sample: "This is a sample function",
+        session: this.sessionProvider.decodeToken(),
+      },
+      200
+    );
   }
 
   constructor(
     public environmentProvider: IEnvironmentProvider,
+    public sessionProvider: ISessionProvider,
     public databaseProvider: IDatabaseProvider
   ) {
-    super(environmentProvider);
+    super(environmentProvider, sessionProvider);
   }
 }

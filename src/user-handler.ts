@@ -1,17 +1,13 @@
-import { SampleHandler } from "./handlers/SampleHandler";
-import { DynamoDBServiceProvider } from "./lib/DatabaseProvider";
+import { UserHandler } from "./handlers/UserHandler";
 import { EnvironmentProvider } from "./lib/EnvironmentProvider";
 import { SessionProvider } from "./lib/SessionProvider";
 
 const environmentProvider = new EnvironmentProvider();
 const sessionProvider = new SessionProvider(environmentProvider);
-const dynamodbProvider = new DynamoDBServiceProvider(
-  environmentProvider.getValue("SampleTableName")
-);
-const handler = new SampleHandler(
+
+const handler = new UserHandler(
   environmentProvider,
-  sessionProvider,
-  dynamodbProvider
+  sessionProvider
 ).getHandler();
 
 export default handler;
