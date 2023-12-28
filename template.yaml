@@ -32,7 +32,7 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       Name: !Sub cloud-project-${ApiStageName}-api
-      StageName: !Ref ApiStageName # This is where we can set stage name
+      StageName: !Ref ApiStageName 
       Auth:
         DefaultAuthorizer: CognitoAuthorizer
         Authorizers:

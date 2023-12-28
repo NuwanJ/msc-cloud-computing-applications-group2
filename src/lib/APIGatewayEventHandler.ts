@@ -23,9 +23,11 @@ export interface IAPIGatewayEventHandler {
   getPath(): string;
   getPathParam(paramName: string): string;
   getPathParameters(): Record<string, string>;
+  getToken(): string;
   getQueryParam(paramName: string): string;
   getQueryStringParameters(): Record<string, string>;
   getMultiValueQueryStringParameters(): Record<string, string[]>;
+  setSessionToken(): void;
   errorResponse(e: HTTPClientError): APIGatewayProxyResult;
   setEvent(event: APIGatewayEvent);
 }

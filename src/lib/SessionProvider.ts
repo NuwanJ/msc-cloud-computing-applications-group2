@@ -5,7 +5,7 @@ import { IEnvironmentProvider } from "./EnvironmentProvider";
 export interface ISessionProvider {
   getToken(): string;
   setToken(token: string): void;
-  decodeToken(): void;
+  decodeToken(): TokenPayload;
   getUserName(): string;
 }
 
