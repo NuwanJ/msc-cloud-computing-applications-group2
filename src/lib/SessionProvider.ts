@@ -3,6 +3,7 @@ import { TokenPayload } from "../../types/SessionProviderTypes";
 import { IEnvironmentProvider } from "./EnvironmentProvider";
 
 export interface ISessionProvider {
+  getUserId(): string;
   getToken(): string;
   setToken(token: string): void;
   decodeToken(): TokenPayload;
@@ -34,6 +35,11 @@ export class SessionProvider {
   getUserName(): string {
     const tokenDecoded = this.decodeToken();
     return tokenDecoded.email;
+  }
+
+  getUserId(): string {
+    const tokenDecoded = this.decodeToken();
+    return tokenDecoded["cognito:username"];
   }
 
   constructor(private environmentProvider: IEnvironmentProvider) {}

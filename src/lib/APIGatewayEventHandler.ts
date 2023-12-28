@@ -8,6 +8,7 @@ import {
   IEventResult,
   HTTPClientError,
   Level,
+  RequestType,
 } from "../../types/APIGatewayTypes";
 import { EventHandler, EventResult } from "./EventHandler";
 import { IEnvironmentProvider } from "./EnvironmentProvider";
@@ -21,6 +22,7 @@ export interface IAPIGatewayEventHandler {
   getHeaders(): Record<string, string>;
   handle(event: APIGatewayProxyEvent): Promise<IEventResult>;
   getPath(): string;
+  getMethod(): RequestType;
   getPathParam(paramName: string): string;
   getPathParameters(): Record<string, string>;
   getToken(): string;
@@ -116,6 +118,10 @@ export abstract class APIGatewayEventHandler
     }
 
     return this.event.multiValueQueryStringParameters;
+  }
+
+  getMethod(): RequestType {
+    return <RequestType>this.event.requestContext.httpMethod;
   }
 
   setBody(): object {

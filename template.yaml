@@ -3,7 +3,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   cloud-project-v1
 
-# We can add parameters
 Parameters:
   ApiStageName:
     Type: String
@@ -13,7 +12,10 @@ Parameters:
     Type: String
     Default: sampleTableName
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+  AppointmentsTableName:
+    Type: String
+    Default: appointments
+
 Globals:
   Function:
     Timeout: 15
@@ -22,8 +24,9 @@ Globals:
     Environment:
       Variables:
         Stage: !Ref ApiStageName
-        SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
         Region: !Sub ${AWS::Region}
+        SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
+        AppointmentTableName: !Sub ${AppointmentsTableName}-${ApiStageName}
   Api:
     TracingEnabled: true
 
@@ -69,6 +72,20 @@ Resources:
       KeySchema:
         - AttributeName: "id"
           KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  AppointmentsTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Sub ${AppointmentsTableName}-${ApiStageName}
+      AttributeDefinitions:
+        - AttributeName: 'id'
+          AttributeType: 'S'
+      KeySchema:
+        - AttributeName: 'id'
+          KeyType: 'HASH'
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -145,6 +162,40 @@ Resources:
         Variables:
           USER_POOL_ID: !Ref UserPool
           USER_POOL_CLIENT: !Ref UserPoolClient
+          
+  AppointmentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: ./dist/src/appointment-handler.default
+      Policies:
+         - DynamoDBCrudPolicy:
+            TableName: !Ref AppointmentsTable
+      Events:
+        Appointment:
+          Type: Api 
+          Properties:
+            Path: /appointments
+            Method: any
+            RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AppointmentActions:
+          Type: Api
+          Properties:
+            Path: /appointments/{action}
+            Method: any
+            RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AppointmentSubActions:
+          Type: Api
+          Properties:
+            Path: /appointments/{action}/{appointmentId}
+            Method: any
+            RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
@@ -168,9 +219,6 @@ Resources:
     DependsOn: ApplicationResourceGroup
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   SampleApi:
     Description: API Gateway Endpoint
     Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/"

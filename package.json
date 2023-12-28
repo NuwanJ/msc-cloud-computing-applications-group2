@@ -16,7 +16,9 @@
     "aws-sdk": "^2.1522.0",
     "esbuild": "^0.14.14",
     "jsonwebtoken": "^9.0.2",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "moment-timezone": "^0.5.43",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
