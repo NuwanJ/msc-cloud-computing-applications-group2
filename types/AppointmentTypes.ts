@@ -1,7 +1,6 @@
 export type AppointmentRequest = {
-    appointmentId: string
-    patientId: string;
-    patientName: string;
-    startTimePoint: string;
-    endTimePoint: string;
+  patientId: string;
+  doctorName: string;
+  startTime: string;
+  endTime: string;
 };

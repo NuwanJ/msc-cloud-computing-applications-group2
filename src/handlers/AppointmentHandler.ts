@@ -4,29 +4,33 @@ import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
 import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
 import { EventResult } from "../lib/EventHandler";
 import { IDatabaseProvider } from "../lib/DatabaseProvider";
-import { DocumentClient } from "aws-sdk/clients/dynamodb";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
+import { ISessionProvider } from "../lib/SessionProvider";
+import moment from "moment-timezone";
 
 export class AppointmentHandler extends APIGatewayEventHandler {
   async handle(): Promise<IEventResult> {
-    if (this.event.requestContext.httpMethod === RequestType.POST) {
-      if (this.getPathParam("action") == "book-appointment") {
+    if (this.getMethod() === RequestType.PUT) {
+      if (this.getPathParam("action") == "create") {
+        // Create an appointment
         return this.bookAppointment();
       }
-      if (this.getPathParam("action") == "update-appointment") {
+    } else if (this.getMethod() === RequestType.POST) {
+      if (this.getPathParam("action") == "update") {
+        // Update an appointment
         return this.updateAppointment();
       }
-    }
-    else if (this.event.requestContext.httpMethod === RequestType.GET) {
-      if (this.getPathParam("action") == "view-all-appointments") {
+    } else if (this.getMethod() === RequestType.GET) {
+      if (this.getPathParam("action") == "all") {
+        // Get all appointments belong to specific user
         return this.retrieveAllAppointments();
-      }
-      if (this.getPathParam("action") == "view-appointment") {
+      } else if (this.getPathParam("action") == "view") {
+        // Get a specific appointment
         return this.retrieveAppointment();
       }
-    }
-    else if (this.event.requestContext.httpMethod === RequestType.DELETE) {
-      if (this.getPathParam("action") == "delete-appointment") {
+    } else if (this.getMethod() === RequestType.DELETE) {
+      if (this.getPathParam("action") == "delete") {
+        // Delete an appointment
         return this.deleteAppointment();
       }
     }
@@ -35,9 +39,11 @@ export class AppointmentHandler extends APIGatewayEventHandler {
   }
 
   async bookAppointment(): Promise<IEventResult> {
-    const { patientName, patientId, startTimePoint, endTimePoint } = <AppointmentRequest>this.getBody();
+    const { patientId, doctorName, startTime, endTime } = <AppointmentRequest>(
+      this.getBody()
+    );
 
-    if (!patientName || !startTimePoint || !endTimePoint) {
+    if (!patientId || !startTime || !endTime || !doctorName) {
       return new EventResult({ message: "Missing required fields" }, 400);
     }
 
@@ -46,34 +52,24 @@ export class AppointmentHandler extends APIGatewayEventHandler {
 
     const appointmentData = {
       id: appointmentId,
-      PatientId: patientId,
-      PatientName: patientName,
-      StartTimePoint: startTimePoint,
-      EndTimePoint: endTimePoint,
+      patientId: patientId,
+      doctorName: doctorName,
+      startTime: moment(startTime).format("YYYY-MM-DD HH:mm:ss"),
+      endTime: moment(endTime).format("YYYY-MM-DD HH:mm:ss"),
     };
 
     try {
-      await this.databaseProvider.putItem(appointmentData)
-      return new EventResult({ message: "Appointment booked successfully", appointmentId: appointmentId },
-        201);
+      await this.databaseProvider.putItem(appointmentData);
+      return new EventResult(
+        {
+          message: "Appointment booked successfully",
+          appointment: appointmentData,
+        },
+        201
+      );
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error booking appointment" }, 500);
-    }
-  }
-
-  async retrieveAllAppointments(): Promise<IEventResult> {
-    try {
-      const scanParams: Partial<DocumentClient.ScanInput> = {
-        TableName: this.environmentProvider.getValue("AppointmentTable"),
-      };
-
-      const scanResult = await this.databaseProvider.scan(scanParams);
-
-      return new EventResult({ appointments: scanResult.Items }, 200);
-    } catch (error) {
-      console.error(error);
-      return new EventResult({ message: "Error retrieving appointments" }, 500);
     }
   }
 
@@ -82,35 +78,66 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       const appointmentId = this.getPathParam("appointmentId");
 
       if (!appointmentId) {
-        return new EventResult({ message: "Missing appointmentId parameter" }, 400);
+        return new EventResult(
+          { message: "Missing appointmentId parameter" },
+          400
+        );
       }
 
       // Fetch the existing appointment from the database
-      const existingAppointment = await this.databaseProvider.getItem<AppointmentRequest>({ id: appointmentId });
+      const existingAppointment =
+        await this.databaseProvider.getItem<AppointmentRequest>({
+          id: appointmentId,
+        });
 
       if (!existingAppointment) {
         return new EventResult({ message: "Appointment not found" }, 404);
       }
-      return new EventResult({ appointment: existingAppointment }, 200);
+      return new EventResult({ ...existingAppointment }, 200);
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error retrieving appointments" }, 500);
     }
   }
 
+  async retrieveAllAppointments(): Promise<IEventResult> {
+    const patientId = this.sessionProvider.getUserId();
+    try {
+      const queryResult = await this.databaseProvider.scan({
+        FilterExpression: "patientId = :patientId",
+        ExpressionAttributeValues: { ":patientId": patientId },
+      });
+
+      return new EventResult({ appointments: queryResult.Items }, 200);
+    } catch (error) {
+      console.error(error);
+      return new EventResult({ message: "Error retrieving appointments" }, 500);
+    }
+  }
 
   async updateAppointment(): Promise<IEventResult> {
     try {
       const appointmentId = this.getPathParam("appointmentId");
+      const { doctorName, startTime, endTime } = this.getBody();
 
       if (!appointmentId) {
-        return new EventResult({ message: "Missing appointmentId parameter" }, 400);
+        return new EventResult(
+          { message: "Missing appointmentId parameter" },
+          400
+        );
       }
 
-      const updatedValues = { ...this.getBody(), appointmentId };
+      const updatedValues = {
+        doctorName,
+        startTime: moment(startTime).format("YYYY-MM-DD HH:mm:ss"),
+        endTime: moment(endTime).format("YYYY-MM-DD HH:mm:ss"),
+      };
 
       // Fetch the existing appointment from the database
-      const existingAppointment = await this.databaseProvider.getItem<AppointmentRequest>({ id: appointmentId });
+      const existingAppointment =
+        await this.databaseProvider.getItem<AppointmentRequest>({
+          id: appointmentId,
+        });
 
       if (!existingAppointment) {
         return new EventResult({ message: "Appointment not found" }, 404);
@@ -118,7 +145,13 @@ export class AppointmentHandler extends APIGatewayEventHandler {
 
       await this.databaseProvider.updateItem(appointmentId, updatedValues);
 
-      return new EventResult({ message: "Appointment updated successfully" }, 200);
+      return new EventResult(
+        {
+          message: "Appointment updated successfully",
+          appointment: { id: appointmentId, ...updatedValues },
+        },
+        200
+      );
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error updating appointment" }, 500);
@@ -130,12 +163,18 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       const appointmentId = this.getPathParam("appointmentId");
 
       if (!appointmentId) {
-        return new EventResult({ message: "Appointment ID not provided" }, 400);
+        return new EventResult(
+          { message: "`appointmentId` not provided" },
+          400
+        );
       }
 
       await this.databaseProvider.deleteItem(appointmentId);
 
-      return new EventResult({ message: "Appointment deleted successfully" }, 200);
+      return new EventResult(
+        { message: "Appointment deleted successfully", id: appointmentId },
+        200
+      );
     } catch (error) {
       console.error(error);
       return new EventResult({ message: "Error deleting appointment" }, 500);
@@ -144,6 +183,7 @@ export class AppointmentHandler extends APIGatewayEventHandler {
 
   constructor(
     public environmentProvider: IEnvironmentProvider,
+    public sessionProvider: ISessionProvider,
     public databaseProvider: IDatabaseProvider
   ) {
     super(environmentProvider);

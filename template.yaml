@@ -26,7 +26,7 @@ Globals:
         Stage: !Ref ApiStageName
         Region: !Sub ${AWS::Region}
         SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
-        AppointmentTableName: !Sub ${appointmentTableName}-${ApiStageName}
+        AppointmentTableName: !Sub ${AppointmentsTableName}-${ApiStageName}
   Api:
     TracingEnabled: true
 
@@ -175,21 +175,27 @@ Resources:
         Appointment:
           Type: Api 
           Properties:
-            Path: /appointment
+            Path: /appointments
             Method: any
             RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
         AppointmentActions:
           Type: Api
           Properties:
-            Path: /appointment/{action}
+            Path: /appointments/{action}
             Method: any
             RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
         AppointmentSubActions:
           Type: Api
           Properties:
-            Path: /appointment/{action}/{appointmentId}
+            Path: /appointments/{action}/{appointmentId}
             Method: any
             RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
