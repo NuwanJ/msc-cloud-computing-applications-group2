@@ -1,11 +1,11 @@
 import { IEventResult, RequestType } from "../../types/APIGatewayTypes";
 import { AppointmentRequest } from "../../types/AppointmentTypes";
-import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
-import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
-import { EventResult } from "../lib/EventHandler";
-import { IDatabaseProvider } from "../lib/DatabaseProvider";
+import { APIGatewayEventHandler } from "../lib/handlers/APIGatewayEventHandler";
+import { IEnvironmentProvider } from "../lib/providers/EnvironmentProvider";
+import { EventResult } from "../lib/handlers/EventHandler";
+import { IDatabaseProvider } from "../lib/providers/DatabaseProvider";
 import { v4 as uuidv4 } from "uuid";
-import { ISessionProvider } from "../lib/SessionProvider";
+import { ISessionProvider } from "../lib/providers/SessionProvider";
 import moment from "moment-timezone";
 
 export class AppointmentHandler extends APIGatewayEventHandler {

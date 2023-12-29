@@ -1,7 +1,7 @@
 import { AppointmentHandler } from "./handlers/AppointmentHandler";
-import { EnvironmentProvider } from "./lib/EnvironmentProvider";
-import { DynamoDBServiceProvider } from "./lib/DatabaseProvider";
-import { SessionProvider } from "./lib/SessionProvider";
+import { EnvironmentProvider } from "./lib/providers/EnvironmentProvider";
+import { DynamoDBServiceProvider } from "./lib/providers/DatabaseProvider";
+import { SessionProvider } from "./lib/providers/SessionProvider";
 
 const environmentProvider = new EnvironmentProvider();
 const sessionProvider = new SessionProvider(environmentProvider);

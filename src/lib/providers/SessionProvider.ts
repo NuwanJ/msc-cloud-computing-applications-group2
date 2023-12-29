@@ -1,5 +1,5 @@
 import * as jwt from "jsonwebtoken";
-import { TokenPayload } from "../../types/SessionProviderTypes";
+import { TokenPayload } from "../../../types/SessionProviderTypes";
 import { IEnvironmentProvider } from "./EnvironmentProvider";
 
 export interface ISessionProvider {

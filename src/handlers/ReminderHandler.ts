@@ -1,11 +1,11 @@
 import { IEventResult } from "../../types/APIGatewayTypes";
-import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
-import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
-import { EventResult } from "../lib/EventHandler";
-import { IDatabaseProvider } from "../lib/DatabaseProvider";
+import { APIGatewayEventHandler } from "../lib/handlers/APIGatewayEventHandler";
+import { IEnvironmentProvider } from "../lib/providers/EnvironmentProvider";
+import { EventResult } from "../lib/handlers/EventHandler";
+import { IDatabaseProvider } from "../lib/providers/DatabaseProvider";
 import moment from "moment-timezone";
 import { DocumentClient } from "aws-sdk/clients/dynamodb";
-import { IQueueProvider } from "../lib/SQSQueueProvider";
+import { IQueueProvider } from "../lib/providers/SQSQueueProvider";
 import { AppointmentData } from "../../types/AppointmentTypes";
 import AWS from "aws-sdk";
 import { UserProfile } from "../../types/UserTypes";

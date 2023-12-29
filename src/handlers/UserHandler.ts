@@ -5,10 +5,10 @@ import {
   UserLoginRequest,
   UserRegisterRequest,
 } from "../../types/UserTypes";
-import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
-import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
-import { ISessionProvider } from "../lib/SessionProvider";
-import { EventResult } from "../lib/EventHandler";
+import { APIGatewayEventHandler } from "../lib/handlers/APIGatewayEventHandler";
+import { IEnvironmentProvider } from "../lib/providers/EnvironmentProvider";
+import { ISessionProvider } from "../lib/providers/SessionProvider";
+import { EventResult } from "../lib/handlers/EventHandler";
 import * as AWS from "aws-sdk";
 export class UserHandler extends APIGatewayEventHandler {
   cognito = new AWS.CognitoIdentityServiceProvider({

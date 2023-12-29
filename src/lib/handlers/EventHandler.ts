@@ -1,6 +1,6 @@
 import type { APIGatewayProxyResult } from "aws-lambda";
-import { HTTPClientError, IEventResult } from "../../types/APIGatewayTypes";
-import { IEnvironmentProvider } from "./EnvironmentProvider";
+import { HTTPClientError, IEventResult } from "../../../types/APIGatewayTypes";
+import { IEnvironmentProvider } from "../providers/EnvironmentProvider";
 
 export class EventResult implements IEventResult {
   result(): APIGatewayProxyResult {

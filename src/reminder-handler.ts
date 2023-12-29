@@ -1,7 +1,7 @@
 import { ReminderHandler } from "./handlers/ReminderHandler";
-import { DynamoDBServiceProvider } from "./lib/DatabaseProvider";
-import { EnvironmentProvider } from "./lib/EnvironmentProvider";
-import { SQSServiceProvider } from "./lib/SQSQueueProvider";
+import { DynamoDBServiceProvider } from "./lib/providers/DatabaseProvider";
+import { EnvironmentProvider } from "./lib/providers/EnvironmentProvider";
+import { SQSServiceProvider } from "./lib/providers/SQSQueueProvider";
 
 const environmentProvider = new EnvironmentProvider();
 const dynamodbProvider = new DynamoDBServiceProvider(

@@ -1,8 +1,8 @@
 import { SQSRecord } from "aws-lambda";
-import { SQSEventHandler } from "../lib/SQSEventHandler";
+import { SQSEventHandler } from "../lib/handlers/SQSEventHandler";
 import { SES } from "aws-sdk";
 import moment from "moment-timezone";
-import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
+import { IEnvironmentProvider } from "../lib/providers/EnvironmentProvider";
 import {
   SendEmailRequest,
   VerifyEmailAddressRequest,

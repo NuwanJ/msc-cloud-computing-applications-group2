@@ -8,7 +8,7 @@ import {
   MessageBodyAttributeMap,
 } from "aws-sdk/clients/sqs";
 
-import { Level } from "../../types/APIGatewayTypes";
+import { Level } from "../../../types/APIGatewayTypes";
 
 export type QueueMessage = {
   messageId?: string;

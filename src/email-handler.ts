@@ -1,5 +1,5 @@
 import { EmailSenderQueue } from "./handlers/EmailSender";
-import { EnvironmentProvider } from "./lib/EnvironmentProvider";
+import { EnvironmentProvider } from "./lib/providers/EnvironmentProvider";
 const environmentProvider = new EnvironmentProvider();
 
 const handler = new EmailSenderQueue(environmentProvider).getHandler();

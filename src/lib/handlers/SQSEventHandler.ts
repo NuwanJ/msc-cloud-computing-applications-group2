@@ -1,4 +1,4 @@
-import { Level } from "../../types/APIGatewayTypes";
+import { Level } from "../../../types/APIGatewayTypes";
 import { EventHandler } from "./EventHandler";
 import type { SQSEvent, SQSHandler, SQSRecord } from "aws-lambda";
 

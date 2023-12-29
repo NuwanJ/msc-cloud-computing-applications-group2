@@ -2,7 +2,7 @@
 import { format } from "util";
 import { EventHandler } from "./EventHandler";
 import type { ScheduledEvent, ScheduledHandler } from "aws-lambda";
-import { Level } from "../../types/APIGatewayTypes";
+import { Level } from "../../../types/APIGatewayTypes";
 
 export interface IScheduledEventHandler {
   setEvent(event: ScheduledEvent): void;
