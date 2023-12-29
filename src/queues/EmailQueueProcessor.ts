@@ -53,20 +53,44 @@ export class EmailQueueProcessor extends SQSEventHandler {
 
       // Send verification Email, this only requred once
       // This step is only required since we haven't a approved email domain
-      const verifyParams = <VerifyEmailAddressRequest>{
-        EmailAddress: emailRequest.to,
-      };
-      try {
-        await this.ses.verifyEmailAddress(verifyParams, (err, data) => {
-          if (err) {
-            console.error("Error verifying email address:", err);
-          } else {
-            console.log("Verification email sent:", data);
+      this.ses
+        .getIdentityVerificationAttributes({ Identities: [emailRequest.to] })
+        .promise()
+        .then(
+          async (data: AWS.SES.GetIdentityVerificationAttributesResponse) => {
+            const verificationAttributes = data.VerificationAttributes;
+
+            if (
+              verificationAttributes &&
+              verificationAttributes[emailRequest.to].VerificationStatus ===
+                "Success"
+            ) {
+              console.log(`Email address ${emailRequest.to} is verified.`);
+            } else {
+              console.log(`Email address ${emailRequest.to} is not verified.`);
+              const verifyParams = <VerifyEmailAddressRequest>{
+                EmailAddress: emailRequest.to,
+              };
+              try {
+                await this.ses.verifyEmailAddress(verifyParams, (err, data) => {
+                  if (err) {
+                    console.error("Error verifying email address:", err);
+                  } else {
+                    console.log("Verification email sent:", data);
+                  }
+                });
+              } catch (verificationErr) {
+                console.error(
+                  "Error verifying email address:",
+                  verificationErr
+                );
+              }
+            }
           }
+        )
+        .catch((err: AWS.AWSError) => {
+          console.error("Error:", err);
         });
-      } catch (verificationErr) {
-        console.error("Error verifying email address:", verificationErr);
-      }
 
       // Send the Email
       try {
