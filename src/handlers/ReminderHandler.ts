@@ -15,16 +15,19 @@ export class ReminderHandler extends APIGatewayEventHandler {
     region: this.environmentProvider.getValue("Region"),
   });
 
+  appointmentInterval = 60;
+  appointmentThreshold = 30;
+
   async handle(): Promise<IEventResult> {
     console.log("Scheduler Event occurred at", moment());
 
-    // TODO Remove this
-    const fromTime = moment().add(0, "minutes").format("YYYY-MM-DD HH:mm:ss");
-    const toTime = moment().add(60, "minutes").format("YYYY-MM-DD HH:mm:ss");
-
     // Consider the appointments from one hour ahead for the Reminders
-    // const fromTime = moment().add(60, "minutes").format("YYYY-MM-DD HH:mm:ss");
-    // const toTime = moment().add(90, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const fromTime = moment()
+      .add(this.appointmentInterval, "minutes")
+      .format("YYYY-MM-DD HH:mm:ss");
+    const toTime = moment()
+      .add(this.appointmentInterval + this.appointmentThreshold, "minutes")
+      .format("YYYY-MM-DD HH:mm:ss");
 
     console.log(`Looking appointments in between ${fromTime} and ${toTime}`);
 

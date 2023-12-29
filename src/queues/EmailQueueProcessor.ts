@@ -23,6 +23,26 @@ export class EmailQueueProcessor extends SQSEventHandler {
     const record: SQSRecord = this.event.Records[0];
     const emailRequest = <SQSEmailPayload>JSON.parse(record.body);
 
+    // Send verification Email, this only requred once
+    // This step is only required since we haven't a approved email domain
+
+    try {
+      await this.ses.verifyEmailAddress(
+        {
+          EmailAddress: emailRequest.to,
+        },
+        (err, data) => {
+          if (err) {
+            console.error("Error verifying email address:", err);
+          } else {
+            console.log("Verification email sent:", data);
+          }
+        }
+      );
+    } catch (verificationErr) {
+      console.error("Error verifying email address:", verificationErr);
+    }
+
     try {
       console.log({
         to: emailRequest.to,
@@ -51,46 +71,41 @@ export class EmailQueueProcessor extends SQSEventHandler {
         ReplyToAddresses: [SOURCE_EMAIL_ADDRESS],
       };
 
-      // Send verification Email, this only requred once
-      // This step is only required since we haven't a approved email domain
-      this.ses
-        .getIdentityVerificationAttributes({ Identities: [emailRequest.to] })
-        .promise()
-        .then(
-          async (data: AWS.SES.GetIdentityVerificationAttributesResponse) => {
-            const verificationAttributes = data.VerificationAttributes;
+      // this.ses
+      //   .getIdentityVerificationAttributes({ Identities: [emailRequest.to] })
+      //   .promise()
+      //   .then(
+      //     async (data: AWS.SES.GetIdentityVerificationAttributesResponse) => {
+      //       console.log("Identity Data", data);
+      //       const verificationAttributes = data.VerificationAttributes;
 
-            if (
-              verificationAttributes &&
-              verificationAttributes[emailRequest.to].VerificationStatus ===
-                "Success"
-            ) {
-              console.log(`Email address ${emailRequest.to} is verified.`);
-            } else {
-              console.log(`Email address ${emailRequest.to} is not verified.`);
-              const verifyParams = <VerifyEmailAddressRequest>{
-                EmailAddress: emailRequest.to,
-              };
-              try {
-                await this.ses.verifyEmailAddress(verifyParams, (err, data) => {
-                  if (err) {
-                    console.error("Error verifying email address:", err);
-                  } else {
-                    console.log("Verification email sent:", data);
-                  }
-                });
-              } catch (verificationErr) {
-                console.error(
-                  "Error verifying email address:",
-                  verificationErr
-                );
-              }
-            }
-          }
-        )
-        .catch((err: AWS.AWSError) => {
-          console.error("Error:", err);
-        });
+      //       if (
+      //         verificationAttributes &&
+      //         verificationAttributes[emailRequest.to].VerificationStatus ===
+      //           "Success"
+      //       ) {
+      //         console.log(`Email address ${emailRequest.to} is verified.`);
+      //       }
+      //     }
+      //   )
+      //   .catch(async (err: AWS.AWSError) => {
+      //     console.error("Error:", err);
+      //     console.log(`Email address ${emailRequest.to} is not verified.`);
+      //     const verifyParams = <VerifyEmailAddressRequest>{
+      //       EmailAddress: emailRequest.to,
+      //     };
+      //     try {
+      //       await this.ses.verifyEmailAddress(verifyParams, (err, data) => {
+      //         if (err) {
+      //           console.error("Error verifying email address:", err);
+      //         } else {
+      //           console.log("Verification email sent:", data);
+      //         }
+      //       });
+      //     } catch (verificationErr) {
+      //       console.error("Error verifying email address:", verificationErr);
+      //     }
+      //   });
 
       // Send the Email
       try {
