@@ -14,7 +14,6 @@ export class EventResult implements IEventResult {
   }
 
   protected getResponseHeaders(): Record<string, string> {
-    // TODO: Define response headers if there should any
     return Object.assign(this.headers, {});
   }
 

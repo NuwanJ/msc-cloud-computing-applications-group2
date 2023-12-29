@@ -1,41 +1,41 @@
+import AWS from "aws-sdk";
+import moment from "moment-timezone";
 import { IEventResult } from "../../types/APIGatewayTypes";
 import { APIGatewayEventHandler } from "../lib/handlers/APIGatewayEventHandler";
 import { IEnvironmentProvider } from "../lib/providers/EnvironmentProvider";
 import { EventResult } from "../lib/handlers/EventHandler";
 import { IDatabaseProvider } from "../lib/providers/DatabaseProvider";
-import moment from "moment-timezone";
-import { DocumentClient } from "aws-sdk/clients/dynamodb";
 import { IQueueProvider } from "../lib/providers/SQSQueueProvider";
 import { AppointmentData } from "../../types/AppointmentTypes";
-import AWS from "aws-sdk";
-import { UserProfile } from "../../types/UserTypes";
+import { getUserData } from "../lib/services/user";
+import { SQSEmailPayload } from "../../types/SQSTypes";
 
 export class ReminderHandler extends APIGatewayEventHandler {
   cognito = new AWS.CognitoIdentityServiceProvider({
-    region: this.environmentProvider.getValue("REGION"),
+    region: this.environmentProvider.getValue("Region"),
   });
 
   async handle(): Promise<IEventResult> {
-    console.log("Scheduler Event Occurred !");
-    console.log("Current time:", moment());
+    console.log("Scheduler Event occurred at", moment());
+
+    // TODO Remove this
+    const fromTime = moment().add(0, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const toTime = moment().add(60, "minutes").format("YYYY-MM-DD HH:mm:ss");
 
     // Consider the appointments from one hour ahead for the Reminders
-    const fromTime = moment().add(0, "minutes");
-    const toTime = moment().add(60, "minutes");
-    // const fromTime = moment().add(60, "minutes");
-    // const toTime = moment().add(90, "minutes");
+    // const fromTime = moment().add(60, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    // const toTime = moment().add(90, "minutes").format("YYYY-MM-DD HH:mm:ss");
 
     console.log(`Looking appointments in between ${fromTime} and ${toTime}`);
 
-    const queryParams: Partial<DocumentClient.ScanInput> = {
+    const dbResponse = await this.databaseProvider.scan({
       FilterExpression: "startTime >= :start_at AND startTime <= :end_at",
       ExpressionAttributeValues: {
-        ":start_at": moment(fromTime).format("YYYY-MM-DD HH:mm:ss"),
-        ":end_at": moment(toTime).format("YYYY-MM-DD HH:mm:ss"),
+        ":start_at": fromTime,
+        ":end_at": toTime,
       },
-    };
-    const dbResponse = await this.databaseProvider.scan(queryParams);
-    console.log("Database Response", dbResponse);
+    });
+    // console.log("Database Response", dbResponse);
 
     if (dbResponse.Count > 0) {
       const appointmentList = <AppointmentData[]>dbResponse.Items;
@@ -55,55 +55,45 @@ export class ReminderHandler extends APIGatewayEventHandler {
     }
   }
 
-  async processAppointments(items: AppointmentData[]) {
+  async processAppointments(appointments: AppointmentData[]) {
     const responseList = [];
 
-    for (const item of items) {
+    for (const appointment of appointments) {
       try {
-        const user = await this.getUserData(item.patientId);
-        console.log("Item", item, "User", user);
+        const user = await getUserData(
+          this.cognito,
+          this.environmentProvider.getValue("USER_POOL_ID"),
+          appointment.patientId
+        );
+        console.log("Appointment", appointment, "User", user);
 
         if (user.enabled) {
-          const resp = await this.emailSender.sendMessage({
+          const emailData: SQSEmailPayload = {
             to: user.email,
             subject: "Appointment Reminder !",
-            content: `You will have an appointment from ${item.startTime} to ${item.endTime} with ${item.doctorName}`,
-          });
-          console.log("SQS response", resp);
+            body: `You will have an appointment from ${appointment.startTime} to ${appointment.endTime} with ${appointment.doctorName}`,
+          };
+          const resp = await this.emailSender.sendMessage(emailData);
 
-          responseList.push({ id: item.id, status: "success" });
+          console.log("SQS Response", resp);
+          responseList.push({
+            id: appointment.id,
+            status: "success",
+            msgId: resp.MessageId,
+          });
         } else {
           console.warn("User is not active", user.email);
-          responseList.push({ id: item.id, status: "user not active" });
+          responseList.push({
+            id: appointment.id,
+            status: "User is not active",
+          });
         }
       } catch (error) {
-        console.error("Error processing item:", error);
+        console.error("Error processing appointment:", error);
       }
     }
 
     return responseList;
-  }
-
-  async getUserData(username: string) {
-    const params = {
-      UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"),
-      Username: username,
-    };
-
-    const result = await this.cognito.adminGetUser(params).promise();
-    const user = <UserProfile>{
-      username: result.Username,
-      email: result.UserAttributes.filter((attribute) => {
-        return attribute.Name == "email";
-      })[0].Value,
-      status: result.UserStatus,
-      enabled: result.Enabled,
-      attributes: result.UserAttributes,
-      createdAt: result.UserCreateDate,
-      modifiedAt: result.UserLastModifiedDate,
-    };
-
-    return user;
   }
 
   constructor(

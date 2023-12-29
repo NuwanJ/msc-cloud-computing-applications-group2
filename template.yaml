@@ -32,7 +32,7 @@ Globals:
     Environment:
       Variables:
         Stage: !Ref ApiStageName
-        REGION: !Ref AWS::Region
+        Region: !Ref AWS::Region
         Timezone: !Ref Timezone
         SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
         AppointmentTableName: !Sub ${AppointmentsTableName}-${ApiStageName}
@@ -250,10 +250,10 @@ Resources:
             Path: /scheduler/reminder
             Method: any
             RestApiId: !Ref GatewayAPI
-        # Cron:
-        #   Type: Schedule
-        #   Properties:
-        #     Schedule: cron(*/30 * * * ? *)
+        Cron:
+          Type: Schedule
+          Properties:
+            Schedule: cron(*/30 * * * ? *)
 
 
   EmailQueue:

@@ -7,56 +7,55 @@ import {
   SendEmailRequest,
   VerifyEmailAddressRequest,
 } from "aws-sdk/clients/ses";
+import { SQSEmailPayload } from "../../types/SQSTypes";
 
-export class EmailSenderQueue extends SQSEventHandler {
+export class EmailQueueProcessor extends SQSEventHandler {
   private ses = new SES({
-    region: this.environmentProvider.getValue("REGION"),
+    region: this.environmentProvider.getValue("Region"),
   });
 
   async handle(): Promise<void> {
     console.info({
-      message: "Incoming email event",
+      message: "Incoming Email event",
       context: JSON.stringify(this.event),
     });
 
     const record: SQSRecord = this.event.Records[0];
-    const payload = JSON.parse(record.body);
+    const emailRequest = <SQSEmailPayload>JSON.parse(record.body);
 
     try {
-      const {
-        to: email_address,
-        subject: email_subject,
-        content: email_content,
-      } = payload;
-
-      console.log(email_address, email_subject, email_content);
+      console.log({
+        to: emailRequest.to,
+        subject: emailRequest.subject,
+        body: emailRequest.body,
+      });
 
       const SOURCE_EMAIL_ADDRESS =
         this.environmentProvider.getValue("SourceEmailAddress");
 
       const params = <SendEmailRequest>{
         Destination: {
-          ToAddresses: [email_address],
+          ToAddresses: [emailRequest.to],
         },
         Message: {
           Body: {
             Text: {
-              Data: email_content,
+              Data: emailRequest.body,
             },
           },
           Subject: {
-            Data: email_subject,
+            Data: emailRequest.subject,
           },
         },
         Source: SOURCE_EMAIL_ADDRESS,
         ReplyToAddresses: [SOURCE_EMAIL_ADDRESS],
       };
 
-      const verifyParams = <VerifyEmailAddressRequest>{
-        EmailAddress: email_address,
-      };
-
       // Send verification Email, this only requred once
+      // This step is only required since we haven't a approved email domain
+      const verifyParams = <VerifyEmailAddressRequest>{
+        EmailAddress: emailRequest.to,
+      };
       try {
         await this.ses.verifyEmailAddress(verifyParams, (err, data) => {
           if (err) {
@@ -71,8 +70,8 @@ export class EmailSenderQueue extends SQSEventHandler {
 
       // Send the Email
       try {
-        const data = await this.ses.sendEmail(params).promise();
-        console.log("Email sent:", data);
+        const emailResponse = await this.ses.sendEmail(params).promise();
+        console.log("Email Response:", emailResponse);
       } catch (error) {
         console.error("Error sending email:", error);
       }

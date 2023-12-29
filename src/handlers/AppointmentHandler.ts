@@ -1,12 +1,12 @@
+import moment from "moment-timezone";
+import { v4 as uuidv4 } from "uuid";
 import { IEventResult, RequestType } from "../../types/APIGatewayTypes";
 import { AppointmentRequest } from "../../types/AppointmentTypes";
 import { APIGatewayEventHandler } from "../lib/handlers/APIGatewayEventHandler";
 import { IEnvironmentProvider } from "../lib/providers/EnvironmentProvider";
 import { EventResult } from "../lib/handlers/EventHandler";
 import { IDatabaseProvider } from "../lib/providers/DatabaseProvider";
-import { v4 as uuidv4 } from "uuid";
 import { ISessionProvider } from "../lib/providers/SessionProvider";
-import moment from "moment-timezone";
 
 export class AppointmentHandler extends APIGatewayEventHandler {
   async handle(): Promise<IEventResult> {
