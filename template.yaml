@@ -16,6 +16,14 @@ Parameters:
     Type: String
     Default: appointments
 
+  SourceEmailAddress:
+    Type: String 
+    Default: nuwanjaliyagoda@gmail.com
+
+  Timezone:
+    Type: String 
+    Default: Asia/Colombo
+
 Globals:
   Function:
     Timeout: 15
@@ -24,9 +32,11 @@ Globals:
     Environment:
       Variables:
         Stage: !Ref ApiStageName
-        Region: !Sub ${AWS::Region}
+        Region: !Ref AWS::Region
+        Timezone: !Ref Timezone
         SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
         AppointmentTableName: !Sub ${AppointmentsTableName}-${ApiStageName}
+
   Api:
     TracingEnabled: true
 
@@ -169,7 +179,7 @@ Resources:
       CodeUri: ./
       Handler: ./dist/src/appointment-handler.default
       Policies:
-         - DynamoDBCrudPolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref AppointmentsTable
       Events:
         Appointment:
@@ -196,43 +206,43 @@ Resources:
             RestApiId: !Ref GatewayAPI
             Auth:
               Authorizer: CognitoAuthorizer
-  AppointmentFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ./
-      Handler: ./dist/src/appointment-handler.default
-      Policies:
-         - DynamoDBCrudPolicy:
-            TableName: !Ref AppointmentsTable
-      Events:
-        Appointment:
-          Type: Api 
-          Properties:
-            Path: /appointment
-            Method: any
-            RestApiId: !Ref GatewayAPI
-        AppointmentActions:
-          Type: Api
-          Properties:
-            Path: /appointment/{action}
-            Method: any
-            RestApiId: !Ref GatewayAPI
-        AppointmentSubActions:
-          Type: Api
-          Properties:
-            Path: /appointment/{action}/{appointmentId}
-            Method: any
-            RestApiId: !Ref GatewayAPI
-  ReminderFunction:
+      
+      
+  ReminderProcessor:
     Type: AWS::Serverless::Function 
     Properties:
       CodeUri: ./
       Handler: ./dist/src/reminder-handler.default
       Policies:
-        - AmazonSESFullAccess 
+        - AmazonSESFullAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppointmentsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminDeleteUser
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminSetUserPassword
+              Resource:
+                - !GetAtt UserPool.Arn
+        - SQSSendMessagePolicy:
+            PolicyName: SQSSendMessagePolicy
+            QueueName: !Ref EmailQueue
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action: 
+                    - sqs:SendMessage
+                    - sqs:SetQueueAttributes
+                  Resource: 
+                    - !GetAtt EmailQueue.Arn # This is a temp change 
+                    - "*" # This is a temp change 
       Environment:
         Variables:
-          REGION: !Ref AWS::Region
+          QueueUrl: !GetAtt EmailQueue.QueueUrl
+          USER_POOL_ID: !Ref UserPool
+          USER_POOL_CLIENT: !Ref UserPoolClient
       Events:
         WebAPI:
           Type: Api 
@@ -240,12 +250,38 @@ Resources:
             Path: /scheduler/reminder
             Method: any
             RestApiId: !Ref GatewayAPI
-        # Cron:
-        #   Type: Schedule
-        #   Properties:
-        #     Schedule: cron(*/30 * * * ? *)
+        Cron:
+          Type: Schedule
+          Properties:
+            Schedule: cron(*/30 * * * ? *)
 
 
+  EmailQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub emailQueue-${ApiStageName}
+      VisibilityTimeout: 15 # Set the visibility timeout as needed
+      MaximumMessageSize: 2048 # Set maximum message size as needed
+      MessageRetentionPeriod: 86400 # Set message retention period in seconds as needed
+
+  EmailQueueFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: ./dist/src/email-handler.default
+      Policies:
+        - AmazonSESFullAccess 
+      Environment:
+        Variables:
+          QueueUrl: !GetAtt EmailQueue.QueueUrl
+          SourceEmailAddress: !Ref SourceEmailAddress
+          
+      Events:
+        EmailSQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt EmailQueue.Arn
+            
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
     Properties:
@@ -271,3 +307,7 @@ Outputs:
   SampleApi:
     Description: API Gateway Endpoint
     Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/"
+
+  EmailQueue: 
+    Description: Test
+    Value: !GetAtt EmailQueue.Arn

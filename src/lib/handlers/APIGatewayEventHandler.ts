@@ -9,10 +9,10 @@ import {
   HTTPClientError,
   Level,
   RequestType,
-} from "../../types/APIGatewayTypes";
+} from "../../../types/APIGatewayTypes";
 import { EventHandler, EventResult } from "./EventHandler";
-import { IEnvironmentProvider } from "./EnvironmentProvider";
-import { ISessionProvider } from "./SessionProvider";
+import { IEnvironmentProvider } from "../providers/EnvironmentProvider";
+import { ISessionProvider } from "../providers/SessionProvider";
 
 export interface IAPIGatewayEventHandler {
   getHandler(): APIGatewayProxyHandler;

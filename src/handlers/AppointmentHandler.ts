@@ -1,12 +1,12 @@
+import moment from "moment-timezone";
+import { v4 as uuidv4 } from "uuid";
 import { IEventResult, RequestType } from "../../types/APIGatewayTypes";
 import { AppointmentRequest } from "../../types/AppointmentTypes";
-import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
-import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
-import { EventResult } from "../lib/EventHandler";
-import { IDatabaseProvider } from "../lib/DatabaseProvider";
-import { v4 as uuidv4 } from "uuid";
-import { ISessionProvider } from "../lib/SessionProvider";
-import moment from "moment-timezone";
+import { APIGatewayEventHandler } from "../lib/handlers/APIGatewayEventHandler";
+import { IEnvironmentProvider } from "../lib/providers/EnvironmentProvider";
+import { EventResult } from "../lib/handlers/EventHandler";
+import { IDatabaseProvider } from "../lib/providers/DatabaseProvider";
+import { ISessionProvider } from "../lib/providers/SessionProvider";
 
 export class AppointmentHandler extends APIGatewayEventHandler {
   async handle(): Promise<IEventResult> {
@@ -39,11 +39,11 @@ export class AppointmentHandler extends APIGatewayEventHandler {
   }
 
   async bookAppointment(): Promise<IEventResult> {
-    const { patientId, doctorName, startTime, endTime } = <AppointmentRequest>(
+    const { doctorName, startTime, endTime } = <AppointmentRequest>(
       this.getBody()
     );
 
-    if (!patientId || !startTime || !endTime || !doctorName) {
+    if (!startTime || !endTime || !doctorName) {
       return new EventResult({ message: "Missing required fields" }, 400);
     }
 
@@ -52,7 +52,7 @@ export class AppointmentHandler extends APIGatewayEventHandler {
 
     const appointmentData = {
       id: appointmentId,
-      patientId: patientId,
+      patientId: this.sessionProvider.getUserId(),
       doctorName: doctorName,
       startTime: moment(startTime).format("YYYY-MM-DD HH:mm:ss"),
       endTime: moment(endTime).format("YYYY-MM-DD HH:mm:ss"),

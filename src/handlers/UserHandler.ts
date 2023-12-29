@@ -1,3 +1,4 @@
+import * as AWS from "aws-sdk";
 import { IEventResult, RequestType } from "../../types/APIGatewayTypes";
 import {
   AuthInfo,
@@ -5,11 +6,11 @@ import {
   UserLoginRequest,
   UserRegisterRequest,
 } from "../../types/UserTypes";
-import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
-import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
-import { ISessionProvider } from "../lib/SessionProvider";
-import { EventResult } from "../lib/EventHandler";
-import * as AWS from "aws-sdk";
+import { APIGatewayEventHandler } from "../lib/handlers/APIGatewayEventHandler";
+import { IEnvironmentProvider } from "../lib/providers/EnvironmentProvider";
+import { ISessionProvider } from "../lib/providers/SessionProvider";
+import { EventResult } from "../lib/handlers/EventHandler";
+import { getUserData, initiateAuth } from "../lib/services/user";
 export class UserHandler extends APIGatewayEventHandler {
   cognito = new AWS.CognitoIdentityServiceProvider({
     region: this.environmentProvider.getValue("Region"),
@@ -41,44 +42,27 @@ export class UserHandler extends APIGatewayEventHandler {
   }
 
   async getAuthInfoByRefreshToken(refreshToken: string): Promise<AuthInfo> {
-    const params = {
+    return await initiateAuth(this.cognito, {
       AuthFlow: "REFRESH_TOKEN_AUTH",
       ClientId: this.environmentProvider.getValue("USER_POOL_CLIENT"),
       AuthParameters: {
         REFRESH_TOKEN: refreshToken,
       },
-    };
-
-    const response = await this.cognito.initiateAuth(params).promise();
-    return {
-      expiresIn: response.AuthenticationResult?.ExpiresIn,
-      type: response.AuthenticationResult.TokenType,
-      accessToken: response.AuthenticationResult?.IdToken,
-      refreshToken: response.AuthenticationResult?.RefreshToken,
-    };
+    });
   }
 
   async getAuthInfoByUsernamePassword(
     username: string,
     password: string
   ): Promise<AuthInfo> {
-    const params = {
+    return await initiateAuth(this.cognito, {
       AuthFlow: "USER_PASSWORD_AUTH",
       ClientId: this.environmentProvider.getValue("USER_POOL_CLIENT"),
       AuthParameters: {
         USERNAME: username,
         PASSWORD: password,
       },
-    };
-
-    const response = await this.cognito.initiateAuth(params).promise();
-
-    return {
-      expiresIn: response.AuthenticationResult?.ExpiresIn,
-      type: response.AuthenticationResult.TokenType,
-      accessToken: response.AuthenticationResult?.IdToken,
-      refreshToken: response.AuthenticationResult?.RefreshToken,
-    };
+    });
   }
 
   // [POST] /user/login
@@ -100,7 +84,7 @@ export class UserHandler extends APIGatewayEventHandler {
       );
     } catch (error) {
       console.error(error);
-      return new EventResult({ message: "Error login user" }, 500);
+      return new EventResult({ message: "Error login user", username }, 500);
     }
   }
 
@@ -141,6 +125,7 @@ export class UserHandler extends APIGatewayEventHandler {
     const params = {
       UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"),
       Username: username,
+      // TODO Add more parameters
       UserAttributes: [{ Name: "email", Value: username }],
       TemporaryPassword: password,
       MessageAction: "SUPPRESS",
@@ -181,27 +166,13 @@ export class UserHandler extends APIGatewayEventHandler {
     try {
       const username = this.sessionProvider.getUserName();
 
-      const params = {
-        UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"),
-        Username: username,
-      };
-
       try {
-        const result = await this.cognito.adminGetUser(params).promise();
-        return new EventResult(
-          {
-            username: result.Username,
-            email: result.UserAttributes.filter((attribute) => {
-              return attribute.Name == "email";
-            })[0].Value,
-            status: result.UserStatus,
-            enabled: result.Enabled,
-            attributes: result.UserAttributes,
-            createdAt: result.UserCreateDate,
-            modifiedAt: result.UserLastModifiedDate,
-          },
-          200
+        const userData = await getUserData(
+          this.cognito,
+          this.environmentProvider.getValue("USER_POOL_ID"),
+          username
         );
+        return new EventResult(userData, 200);
       } catch (error) {
         console.error(error);
         return new EventResult({ message: "Error fetching user", error }, 500);
@@ -211,7 +182,6 @@ export class UserHandler extends APIGatewayEventHandler {
       return new EventResult({ message: "Error decoding token" }, 500);
     }
   }
-
   constructor(
     public environmentProvider: IEnvironmentProvider,
     public sessionProvider: ISessionProvider

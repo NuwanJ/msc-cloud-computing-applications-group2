@@ -14,11 +14,12 @@
   },
   "dependencies": {
     "@types/moment": "^2.13.0",
+    "aws-lambda": "^1.0.7",
     "aws-sdk": "^2.1522.0",
     "esbuild": "^0.14.14",
+    "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
-    "jsonwebtoken": "^9.0.2",
     "moment-timezone": "^0.5.43",
     "uuid": "^9.0.1"
   },
