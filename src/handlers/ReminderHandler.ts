@@ -1,17 +1,17 @@
 import { IEventResult } from "../../types/APIGatewayTypes";
 import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
 import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
-import { SES } from "aws-sdk";
 import { EventResult } from "../lib/EventHandler";
-import { ReminderRequestType } from "../../types/ReminderTypes";
 import { IDatabaseProvider } from "../lib/DatabaseProvider";
 import moment from "moment-timezone";
 import { DocumentClient } from "aws-sdk/clients/dynamodb";
-
-const TIMEZONE = "Asia/Colombo";
+import { IQueueProvider } from "../lib/SQSQueueProvider";
+import { AppointmentData } from "../../types/AppointmentTypes";
+import AWS from "aws-sdk";
+import { UserProfile } from "../../types/UserTypes";
 
 export class ReminderHandler extends APIGatewayEventHandler {
-  private ses = new SES({
+  cognito = new AWS.CognitoIdentityServiceProvider({
     region: this.environmentProvider.getValue("REGION"),
   });
 
@@ -19,89 +19,101 @@ export class ReminderHandler extends APIGatewayEventHandler {
     console.log("Scheduler Event Occurred !");
     console.log("Current time:", moment());
 
-    const fromTime = moment();
-    const toTime = moment().add(30, "minutes");
+    // Consider the appointments from one hour ahead for the Reminders
+    const fromTime = moment().add(0, "minutes");
+    const toTime = moment().add(60, "minutes");
+    // const fromTime = moment().add(60, "minutes");
+    // const toTime = moment().add(90, "minutes");
 
     console.log(`Looking appointments in between ${fromTime} and ${toTime}`);
-    // const { email } = <ReminderRequestType>this.getBody();
 
-    const queryParams: Partial<DocumentClient.QueryInput> = {
-      TableName: this.environmentProvider.getValue("AppointmentTable"),
+    const queryParams: Partial<DocumentClient.ScanInput> = {
       FilterExpression: "startTime >= :start_at AND startTime <= :end_at",
       ExpressionAttributeValues: {
-        ":start_at": fromTime,
-        ":end_at": toTime,
+        ":start_at": moment(fromTime).format("YYYY-MM-DD HH:mm:ss"),
+        ":end_at": moment(toTime).format("YYYY-MM-DD HH:mm:ss"),
       },
     };
-
-    const dbResponse = await this.databaseProvider.query(queryParams);
+    const dbResponse = await this.databaseProvider.scan(queryParams);
     console.log("Database Response", dbResponse);
 
-    if (dbResponse.Items) {
-      const appointmentList = dbResponse.Items;
+    if (dbResponse.Count > 0) {
+      const appointmentList = <AppointmentData[]>dbResponse.Items;
+      console.log("Appointments", appointmentList);
 
-      appointmentList.forEach((item) => {
-        // TODO: complete this
-        console.log("Item", item);
-      });
+      const responseList = await this.processAppointments(appointmentList);
+
+      return new EventResult(
+        { message: "Executed successfully", appointments: responseList },
+        200
+      );
+    } else {
+      return new EventResult(
+        { message: "No appointment to be executed", appointments: [] },
+        200
+      );
+    }
+  }
+
+  async processAppointments(items: AppointmentData[]) {
+    const responseList = [];
+
+    for (const item of items) {
+      try {
+        const user = await this.getUserData(item.patientId);
+        console.log("Item", item, "User", user);
+
+        if (user.enabled) {
+          const resp = await this.emailSender.sendMessage({
+            to: user.email,
+            subject: "Appointment Reminder !",
+            content: `You will have an appointment from ${item.startTime} to ${item.endTime} with ${item.doctorName}`,
+          });
+          console.log("SQS response", resp);
+
+          responseList.push({ id: item.id, status: "success" });
+        } else {
+          console.warn("User is not active", user.email);
+          responseList.push({ id: item.id, status: "user not active" });
+        }
+      } catch (error) {
+        console.error("Error processing item:", error);
+      }
     }
 
-    // const params = {
-    //   Destination: {
-    //     ToAddresses: ["email"], // Email addresses to send the email to
-    //   },
-    //   Message: {
-    //     Body: {
-    //       Text: {
-    //         Data: "This is the message body.",
-    //       },
-    //     },
-    //     Subject: {
-    //       Data: "Subject of the email",
-    //     },
-    //   },
-    //   Source: "nuwanjaliyagoda@gmail.com",
-    // };
+    return responseList;
+  }
 
-    // const verifyParams = {
-    //   EmailAddress: email,
-    // };
+  async getUserData(username: string) {
+    const params = {
+      UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"),
+      Username: username,
+    };
 
-    // // Send verification Email, this only requred once
-    // try {
-    //   await this.ses.verifyEmailAddress(verifyParams, (err, data) => {
-    //     if (err) {
-    //       console.error("Error verifying email address:", err);
-    //     } else {
-    //       console.log("Verification email sent:", data);
-    //     }
-    //   });
-    // } catch (verificationErr) {
-    //   console.error("Error verifying email address:", verificationErr);
-    //   return new EventResult({ message: "Error verifying email address" }, 500);
-    // }
+    const result = await this.cognito.adminGetUser(params).promise();
+    const user = <UserProfile>{
+      username: result.Username,
+      email: result.UserAttributes.filter((attribute) => {
+        return attribute.Name == "email";
+      })[0].Value,
+      status: result.UserStatus,
+      enabled: result.Enabled,
+      attributes: result.UserAttributes,
+      createdAt: result.UserCreateDate,
+      modifiedAt: result.UserLastModifiedDate,
+    };
 
-    // // Send the Email
-    // try {
-    //   const data = await this.ses.sendEmail(params).promise();
-    //   console.log("Email sent:", data);
-    //   return new EventResult({ message: "Email sent successfully!" }, 200);
-    // } catch (error) {
-    //   console.error("Error sending email:", error);
-    //   return new EventResult({ message: "Error sending email" }, 500);
-    // }
-
-    console.log("Success");
-    return new EventResult({ message: "Executed successfully" }, 200);
+    return user;
   }
 
   constructor(
     public environmentProvider: IEnvironmentProvider,
-    public databaseProvider: IDatabaseProvider
+    public databaseProvider: IDatabaseProvider,
+    private emailSender: IQueueProvider
   ) {
     super(environmentProvider);
 
     // Set timezone
-    moment.tz.setDefault(TIMEZONE);
+    moment.tz.setDefault(environmentProvider.getValue("Timezone"));
   }
 }

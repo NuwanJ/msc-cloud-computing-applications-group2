@@ -12,7 +12,7 @@ import { EventResult } from "../lib/EventHandler";
 import * as AWS from "aws-sdk";
 export class UserHandler extends APIGatewayEventHandler {
   cognito = new AWS.CognitoIdentityServiceProvider({
-    region: this.environmentProvider.getValue("Region"),
+    region: this.environmentProvider.getValue("REGION"),
   });
 
   async handle(): Promise<IEventResult> {

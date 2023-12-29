@@ -22,3 +22,17 @@ export type AuthInfo = {
   expiresIn: number;
   refreshToken: string;
 };
+
+export type UserAttribute = {
+  Name: string;
+  Value: string | number;
+};
+export type UserProfile = {
+  username: string;
+  email: string;
+  status: "CONFIRMED" | string;
+  enabled: boolean;
+  attributes: UserAttribute[];
+  createdAt: Date;
+  modifiedAt: Date;
+};

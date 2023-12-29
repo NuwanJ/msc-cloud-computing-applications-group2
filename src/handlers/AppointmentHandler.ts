@@ -39,11 +39,11 @@ export class AppointmentHandler extends APIGatewayEventHandler {
   }
 
   async bookAppointment(): Promise<IEventResult> {
-    const { patientId, doctorName, startTime, endTime } = <AppointmentRequest>(
+    const { doctorName, startTime, endTime } = <AppointmentRequest>(
       this.getBody()
     );
 
-    if (!patientId || !startTime || !endTime || !doctorName) {
+    if (!startTime || !endTime || !doctorName) {
       return new EventResult({ message: "Missing required fields" }, 400);
     }
 
@@ -52,7 +52,7 @@ export class AppointmentHandler extends APIGatewayEventHandler {
 
     const appointmentData = {
       id: appointmentId,
-      patientId: patientId,
+      patientId: this.sessionProvider.getUserId(),
       doctorName: doctorName,
       startTime: moment(startTime).format("YYYY-MM-DD HH:mm:ss"),
       endTime: moment(endTime).format("YYYY-MM-DD HH:mm:ss"),
