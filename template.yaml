@@ -18,7 +18,7 @@ Parameters:
 
   SourceEmailAddress:
     Type: String 
-    Default: nuwanjaliyagoda@gmail.com
+    Default: info@sample-healthcare-system.com
 
   Timezone:
     Type: String 
@@ -30,7 +30,7 @@ Parameters:
 
   appointmentThreshold:
     Type: Number
-    Default: "60"
+    Default: "30"
 
 
 Globals:
