@@ -100,41 +100,6 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
-  SampleFunction:
-    # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ./
-      Handler: ./dist/src/sample-handler.default
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
-      Events:
-        Sample:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-          Properties:
-            Path: /sample
-            Method: any
-            RestApiId: !Ref GatewayAPI
-            Auth:
-              Authorizer: CognitoAuthorizer
-        SampleActions:
-          Type: Api
-          Properties:
-            Path: /sample/{action}
-            Method: any
-            RestApiId: !Ref GatewayAPI
-            Auth:
-              Authorizer: CognitoAuthorizer
-        SampleSubActions:
-          Type: Api
-          Properties:
-            Path: /sample/{action}/{subAction}
-            Method: any
-            RestApiId: !Ref GatewayAPI
-            Auth:
-              Authorizer: CognitoAuthorizer
-
   UserFunction:
     Type: AWS::Serverless::Function
     Properties:
