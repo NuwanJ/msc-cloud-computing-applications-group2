@@ -1,7 +1,7 @@
 import { SampleHandler } from "./handlers/SampleHandler";
-import { DynamoDBServiceProvider } from "./lib/DatabaseProvider";
-import { EnvironmentProvider } from "./lib/EnvironmentProvider";
-import { SessionProvider } from "./lib/SessionProvider";
+import { DynamoDBServiceProvider } from "./lib/providers/DatabaseProvider";
+import { EnvironmentProvider } from "./lib/providers/EnvironmentProvider";
+import { SessionProvider } from "./lib/providers/SessionProvider";
 
 const environmentProvider = new EnvironmentProvider();
 const sessionProvider = new SessionProvider(environmentProvider);

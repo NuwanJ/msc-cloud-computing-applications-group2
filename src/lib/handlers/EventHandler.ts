@@ -1,6 +1,6 @@
 import type { APIGatewayProxyResult } from "aws-lambda";
-import { HTTPClientError, IEventResult } from "../../types/APIGatewayTypes";
-import { IEnvironmentProvider } from "./EnvironmentProvider";
+import { HTTPClientError, IEventResult } from "../../../types/APIGatewayTypes";
+import { IEnvironmentProvider } from "../providers/EnvironmentProvider";
 
 export class EventResult implements IEventResult {
   result(): APIGatewayProxyResult {
@@ -14,7 +14,6 @@ export class EventResult implements IEventResult {
   }
 
   protected getResponseHeaders(): Record<string, string> {
-    // TODO: Define response headers if there should any
     return Object.assign(this.headers, {});
   }
 

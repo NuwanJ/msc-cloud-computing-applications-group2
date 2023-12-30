@@ -1,9 +1,9 @@
 import { IEventResult, RequestType } from "../../types/APIGatewayTypes";
-import { APIGatewayEventHandler } from "../lib/APIGatewayEventHandler";
-import { IDatabaseProvider } from "../lib/DatabaseProvider";
-import { IEnvironmentProvider } from "../lib/EnvironmentProvider";
-import { EventResult } from "../lib/EventHandler";
-import { ISessionProvider } from "../lib/SessionProvider";
+import { APIGatewayEventHandler } from "../lib/handlers/APIGatewayEventHandler";
+import { IDatabaseProvider } from "../lib/providers/DatabaseProvider";
+import { IEnvironmentProvider } from "../lib/providers/EnvironmentProvider";
+import { EventResult } from "../lib/handlers/EventHandler";
+import { ISessionProvider } from "../lib/providers/SessionProvider";
 export class SampleHandler extends APIGatewayEventHandler {
   // Path formats:
   // - /sample
