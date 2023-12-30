@@ -24,9 +24,18 @@ Parameters:
     Type: String 
     Default: Asia/Colombo
 
+  appointmentInterval:
+    Type: Number
+    Default: "60"
+
+  appointmentThreshold:
+    Type: Number
+    Default: "60"
+
+
 Globals:
   Function:
-    Timeout: 15
+    Timeout: 60
     Runtime: nodejs16.x
     Tracing: Active
     Environment:
@@ -35,7 +44,6 @@ Globals:
         Region: !Ref AWS::Region
         Timezone: !Ref Timezone
         SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
-        AppointmentTableName: !Sub ${AppointmentsTableName}-${ApiStageName}
 
   Api:
     TracingEnabled: true
@@ -172,12 +180,16 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
       
-      
   ReminderProcessor:
     Type: AWS::Serverless::Function 
     Properties:
       CodeUri: ./
       Handler: ./dist/src/reminder-handler.default
+      Events:
+        Cron:
+          Type: Schedule
+          Properties:
+            Schedule: cron(*/30 * * * ? *)
       Policies:
         - AmazonSESFullAccess
         - DynamoDBCrudPolicy:
@@ -201,24 +213,15 @@ Resources:
                     - sqs:SendMessage
                     - sqs:SetQueueAttributes
                   Resource: 
-                    - !GetAtt EmailQueue.Arn # This is a temp change 
+                    - !GetAtt EmailQueue.Arn 
                     - "*" # This is a temp change 
       Environment:
         Variables:
           QueueUrl: !GetAtt EmailQueue.QueueUrl
           USER_POOL_ID: !Ref UserPool
           USER_POOL_CLIENT: !Ref UserPoolClient
-      Events:
-        WebAPI:
-          Type: Api 
-          Properties:
-            Path: /scheduler/reminder
-            Method: any
-            RestApiId: !Ref GatewayAPI
-        Cron:
-          Type: Schedule
-          Properties:
-            Schedule: cron(*/30 * * * ? *)
+          AppointmentInterval: !Ref appointmentInterval
+          AppointmentThreshold: !Ref appointmentThreshold
 
 
   EmailQueue:

@@ -162,6 +162,7 @@ export abstract class APIGatewayEventHandler
       this.setSessionToken();
 
       try {
+        // TODO: Sanitize the sensitive information such as passwords, tokens before logging the Request and Responses into CloudWatch
         console.log({
           level: Level.Debug,
           message: "Lambda Request",
