@@ -1,13 +1,9 @@
 import { SampleHandler } from "../../src/handlers/SampleHandler";
-// import { IDatabaseProvider } from "../../src/lib/providers/DatabaseProvider";
-// import type { ISessionProvider } from "../../src/lib/providers/SessionProvider";
 import { RequestType } from "../../types/APIGatewayTypes";
-import { TokenPayload } from "../../types/SessionProviderTypes";
-// import { TokenPayload } from "../../types/SessionProviderTypes";
 
 let EnvironmentProviderMock: jest.Mock;
-let SessionProviderMock: jest.Mock; // <ISessionProvider>;
-let DatabaseProviderMock: jest.Mock; //<IDatabaseProvider>;
+let SessionProviderMock: jest.Mock;
+let DatabaseProviderMock: jest.Mock;
 let handler;
 
 beforeAll(() => {
@@ -74,7 +70,6 @@ describe("Unit test for app handler", function () {
 
     const result = await handler.handle();
 
-    console.log(result.body);
     expect(result.statusCode).toEqual(200);
     expect(result.body).toEqual({
       message: "This is a sample message for a GET request",
