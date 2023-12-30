@@ -1,11 +1,13 @@
-// import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { SampleHandler } from "../../src/handlers/SampleHandler";
-import { APIGatewayEventHandler } from "../../src/lib/APIGatewayEventHandler";
-import { EventResult } from "../../src/lib/EventHandler";
+// import { IDatabaseProvider } from "../../src/lib/providers/DatabaseProvider";
+// import type { ISessionProvider } from "../../src/lib/providers/SessionProvider";
 import { RequestType } from "../../types/APIGatewayTypes";
-// import { IEnvironmentProvider } from "../../src/lib/EnvironmentProvider";
+import { TokenPayload } from "../../types/SessionProviderTypes";
+// import { TokenPayload } from "../../types/SessionProviderTypes";
 
 let EnvironmentProviderMock: jest.Mock;
+let SessionProviderMock: jest.Mock; // <ISessionProvider>;
+let DatabaseProviderMock: jest.Mock; //<IDatabaseProvider>;
 let handler;
 
 beforeAll(() => {
@@ -21,7 +23,27 @@ beforeAll(() => {
     },
   }));
 
-  handler = new SampleHandler(EnvironmentProviderMock());
+  SessionProviderMock = jest.fn(() => ({
+    decodeToken(): unknown {
+      return {
+        sub: "string",
+        email: "user@example.com",
+      };
+    },
+    getUserName(): string {
+      return "user@example.com";
+    },
+    getUserId(): string {
+      return "user@example.com";
+    },
+  }));
+  DatabaseProviderMock = jest.fn();
+
+  handler = new SampleHandler(
+    EnvironmentProviderMock(),
+    SessionProviderMock(),
+    DatabaseProviderMock()
+  );
 });
 
 describe("Unit test for app handler", function () {
@@ -29,7 +51,13 @@ describe("Unit test for app handler", function () {
     const result = await handler.sampleFunction();
 
     expect(result.statusCode).toEqual(200);
-    expect(result.body).toEqual({ Sample: "This is a sample function" });
+    expect(result.body).toEqual({
+      Sample: "This is a sample function",
+      session: {
+        sub: "string",
+        email: "user@example.com",
+      },
+    });
   });
 
   it("Test custom events ", async () => {
@@ -46,12 +74,17 @@ describe("Unit test for app handler", function () {
 
     const result = await handler.handle();
 
+    console.log(result.body);
     expect(result.statusCode).toEqual(200);
     expect(result.body).toEqual({
       message: "This is a sample message for a GET request",
       request: {
         path: { id: "1234" },
         query: { q: "abcd" },
+      },
+      session: {
+        sub: "string",
+        email: "user@example.com",
       },
     });
   });
