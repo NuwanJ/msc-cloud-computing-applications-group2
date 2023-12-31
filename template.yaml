@@ -213,7 +213,7 @@ Resources:
                 Effect: Allow
                 Actions:
                   - sqs:SendMessage*
-                  - sqs:GetQueueAttributes
+                  - sqs:SetQueueAttributes
                 Resource: 
                   - !GetAtt EmailQueue.Arn # This is a temp change 
                   - "*" # This is a temp change 
