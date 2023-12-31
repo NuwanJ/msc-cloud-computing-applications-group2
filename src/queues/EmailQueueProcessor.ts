@@ -17,48 +17,63 @@ export class EmailQueueProcessor extends SQSEventHandler {
       context: this.event,
     });
 
+    const record: SQSRecord = this.event.Records[0];
+    const emailRequest = <SQSEmailPayload>JSON.parse(record.body);
+
+    console.log({
+      to: emailRequest.to,
+      subject: emailRequest.subject,
+      body: emailRequest.body,
+    });
+
+    const SOURCE_EMAIL_ADDRESS =
+      this.environmentProvider.getValue("SourceEmailAddress");
+
+    // Send verification Email, this only requred once
+    // This step is only required since we haven't a approved email domain
+
     try {
-      const record: SQSRecord = this.event.Records[0];
-      const emailRequest = <SQSEmailPayload>JSON.parse(record.body);
-
-      console.log({
-        to: emailRequest.to,
-        subject: emailRequest.subject,
-        body: emailRequest.body,
-      });
-
-      const SOURCE_EMAIL_ADDRESS =
-        this.environmentProvider.getValue("SourceEmailAddress");
-
-      // Compose the email
-      const params = <SendEmailRequest>{
-        Destination: {
-          ToAddresses: [emailRequest.to],
+      await this.ses.verifyEmailAddress(
+        {
+          EmailAddress: emailRequest.to,
         },
-        Message: {
-          Body: {
-            Text: {
-              Data: emailRequest.body,
-            },
-          },
-          Subject: {
-            Data: emailRequest.subject,
+        (err, data) => {
+          if (err) {
+            console.error("Error verifying email address:", err);
+          } else {
+            console.log("Verification email sent:", data);
+          }
+        }
+      );
+    } catch (verificationErr) {
+      console.error("Error verifying email address:", verificationErr);
+    }
+
+    // Compose the email
+    const params = <SendEmailRequest>{
+      Destination: {
+        ToAddresses: [emailRequest.to],
+      },
+      Message: {
+        Body: {
+          Text: {
+            Data: emailRequest.body,
           },
         },
-        Source: SOURCE_EMAIL_ADDRESS,
-        ReplyToAddresses: [SOURCE_EMAIL_ADDRESS],
-      };
+        Subject: {
+          Data: emailRequest.subject,
+        },
+      },
+      Source: SOURCE_EMAIL_ADDRESS,
+      ReplyToAddresses: [SOURCE_EMAIL_ADDRESS],
+    };
 
-      // Send the Email
-      try {
-        const emailResponse = await this.ses.sendEmail(params).promise();
-        console.log("Email Response:", emailResponse);
-      } catch (error) {
-        console.error("Error sending email:", error);
-      }
-    } catch (exception) {
-      console.log("Email sending failed", exception);
-      throw new Error("Email sending failed");
+    // Send the Email
+    try {
+      const emailResponse = await this.ses.sendEmail(params).promise();
+      console.log("Email Response:", emailResponse);
+    } catch (error) {
+      console.error("Error sending email:", error);
     }
   }
 
