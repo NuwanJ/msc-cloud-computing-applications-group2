@@ -33,6 +33,9 @@ export class EmailQueueProcessor extends SQSEventHandler {
     // This step is only required since we haven't a approved email domain
 
     try {
+      console.log(
+        "Try verifying the email address - only in Sandbox environment"
+      );
       await this.ses.verifyEmailAddress(
         {
           EmailAddress: emailRequest.to,
