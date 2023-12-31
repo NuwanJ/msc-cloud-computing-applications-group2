@@ -1,11 +1,9 @@
-// import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { SampleHandler } from "../../src/handlers/SampleHandler";
-import { APIGatewayEventHandler } from "../../src/lib/APIGatewayEventHandler";
-import { EventResult } from "../../src/lib/EventHandler";
 import { RequestType } from "../../types/APIGatewayTypes";
-// import { IEnvironmentProvider } from "../../src/lib/EnvironmentProvider";
 
 let EnvironmentProviderMock: jest.Mock;
+let SessionProviderMock: jest.Mock;
+let DatabaseProviderMock: jest.Mock;
 let handler;
 
 beforeAll(() => {
@@ -21,7 +19,27 @@ beforeAll(() => {
     },
   }));
 
-  handler = new SampleHandler(EnvironmentProviderMock());
+  SessionProviderMock = jest.fn(() => ({
+    decodeToken(): unknown {
+      return {
+        sub: "string",
+        email: "user@example.com",
+      };
+    },
+    getUserName(): string {
+      return "user@example.com";
+    },
+    getUserId(): string {
+      return "user@example.com";
+    },
+  }));
+  DatabaseProviderMock = jest.fn();
+
+  handler = new SampleHandler(
+    EnvironmentProviderMock(),
+    SessionProviderMock(),
+    DatabaseProviderMock()
+  );
 });
 
 describe("Unit test for app handler", function () {
@@ -29,7 +47,13 @@ describe("Unit test for app handler", function () {
     const result = await handler.sampleFunction();
 
     expect(result.statusCode).toEqual(200);
-    expect(result.body).toEqual({ Sample: "This is a sample function" });
+    expect(result.body).toEqual({
+      Sample: "This is a sample function",
+      session: {
+        sub: "string",
+        email: "user@example.com",
+      },
+    });
   });
 
   it("Test custom events ", async () => {
@@ -52,6 +76,10 @@ describe("Unit test for app handler", function () {
       request: {
         path: { id: "1234" },
         query: { q: "abcd" },
+      },
+      session: {
+        sub: "string",
+        email: "user@example.com",
       },
     });
   });

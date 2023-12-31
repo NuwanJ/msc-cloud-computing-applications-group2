@@ -43,6 +43,8 @@ export class AppointmentHandler extends APIGatewayEventHandler {
       this.getBody()
     );
 
+    console.log(this.getBody());
+
     if (!startTime || !endTime || !doctorName) {
       return new EventResult({ message: "Missing required fields" }, 400);
     }
