@@ -132,7 +132,7 @@ export class UserHandler extends APIGatewayEventHandler {
       UserAttributes: [
         { Name: "email", Value: username },
         { Name: "name", Value: name || "N/A" },
-        { Name: "dob", Value: moment(dob).format("YYYY-MM-DD") || "N/A" },
+        { Name: "birthdate", Value: moment(dob).format("YYYY-MM-DD") || "N/A" },
       ],
       TemporaryPassword: password,
       MessageAction: "SUPPRESS",

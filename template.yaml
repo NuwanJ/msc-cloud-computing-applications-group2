@@ -64,11 +64,16 @@ Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: AppUsers
+      UserPoolName: !Sub AppUsers-${ApiStageName}
       UsernameAttributes:
         - email
       AutoVerifiedAttributes:
         - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -228,9 +233,9 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub emailQueue-${ApiStageName}
-      VisibilityTimeout: 15 # Set the visibility timeout as needed
-      MaximumMessageSize: 2048 # Set maximum message size as needed
-      MessageRetentionPeriod: 86400 # Set message retention period in seconds as needed
+      VisibilityTimeout: 60 
+      MaximumMessageSize: 2048 
+      MessageRetentionPeriod: 86400 
 
   EmailQueueFunction:
     Type: AWS::Serverless::Function
