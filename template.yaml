@@ -18,7 +18,7 @@ Parameters:
 
   SourceEmailAddress:
     Type: String 
-    Default: info@sample-healthcare-system.com
+    Default: nuwan.20232219@iit.ac.lk
 
   Timezone:
     Type: String 
@@ -44,6 +44,7 @@ Globals:
         Region: !Ref AWS::Region
         Timezone: !Ref Timezone
         SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
+        AppointmentTableName: !Sub ${AppointmentsTableName}-${ApiStageName}
 
   Api:
     TracingEnabled: true
@@ -185,16 +186,12 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
       
+      
   ReminderProcessor:
     Type: AWS::Serverless::Function 
     Properties:
       CodeUri: ./
       Handler: ./dist/src/reminder-handler.default
-      Events:
-        Cron:
-          Type: Schedule
-          Properties:
-            Schedule: cron(*/30 * * * ? *)
       Policies:
         - AmazonSESFullAccess
         - DynamoDBCrudPolicy:
@@ -213,13 +210,13 @@ Resources:
             QueueName: !Ref EmailQueue
             PolicyDocument:
               Statement:
-                - Effect: Allow
-                  Action: 
-                    - sqs:SendMessage
-                    - sqs:SetQueueAttributes
-                  Resource: 
-                    - !GetAtt EmailQueue.Arn 
-                    - "*" # This is a temp change 
+                Effect: Allow
+                Actions:
+                  - sqs:SendMessage*
+                  - sqs:GetQueueAttributes
+                Resource: 
+                  - !GetAtt EmailQueue.Arn # This is a temp change 
+                  - "*" # This is a temp change 
       Environment:
         Variables:
           QueueUrl: !GetAtt EmailQueue.QueueUrl
@@ -227,15 +224,26 @@ Resources:
           USER_POOL_CLIENT: !Ref UserPoolClient
           AppointmentInterval: !Ref appointmentInterval
           AppointmentThreshold: !Ref appointmentThreshold
+      Events:
+        WebAPI:
+          Type: Api 
+          Properties:
+            Path: /scheduler/reminder
+            Method: any
+            RestApiId: !Ref GatewayAPI
+        Cron:
+          Type: Schedule
+          Properties:
+            Schedule: cron(*/30 * * * ? *)
 
 
   EmailQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub emailQueue-${ApiStageName}
-      VisibilityTimeout: 60 
-      MaximumMessageSize: 2048 
-      MessageRetentionPeriod: 86400 
+      VisibilityTimeout: 60 # Set the visibility timeout as needed
+      MaximumMessageSize: 2048 # Set maximum message size as needed
+      MessageRetentionPeriod: 86400 # Set message retention period in seconds as needed
 
   EmailQueueFunction:
     Type: AWS::Serverless::Function
@@ -280,7 +288,3 @@ Outputs:
   SampleApi:
     Description: API Gateway Endpoint
     Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/"
-
-  EmailQueue: 
-    Description: Test
-    Value: !GetAtt EmailQueue.Arn
