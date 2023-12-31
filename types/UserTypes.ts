@@ -1,6 +1,8 @@
 export type UserRegisterRequest = {
   username: string;
   password: string;
+  name: string;
+  dob: Date;
 };
 
 export type RefreshTokenRequest = {

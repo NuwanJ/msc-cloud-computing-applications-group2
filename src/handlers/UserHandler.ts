@@ -11,6 +11,8 @@ import { IEnvironmentProvider } from "../lib/providers/EnvironmentProvider";
 import { ISessionProvider } from "../lib/providers/SessionProvider";
 import { EventResult } from "../lib/handlers/EventHandler";
 import { getUserData, initiateAuth } from "../lib/services/user";
+import { AdminCreateUserRequest } from "aws-sdk/clients/cognitoidentityserviceprovider";
+import moment from "moment";
 export class UserHandler extends APIGatewayEventHandler {
   cognito = new AWS.CognitoIdentityServiceProvider({
     region: this.environmentProvider.getValue("Region"),
@@ -114,19 +116,24 @@ export class UserHandler extends APIGatewayEventHandler {
   }
 
   // [POST] /user/register
-  // body: {username, password}
+  // body: {username, password, name, dob}
   async register(): Promise<IEventResult> {
-    const { username, password } = <UserRegisterRequest>this.getBody();
+    const { username, password, name, dob } = <UserRegisterRequest>(
+      this.getBody()
+    );
 
     if (!username || !password) {
       return new EventResult({ message: "Missing required fields" }, 400);
     }
 
-    const params = {
+    const params: AdminCreateUserRequest = {
       UserPoolId: this.environmentProvider.getValue("USER_POOL_ID"),
       Username: username,
-      // TODO Add more parameters
-      UserAttributes: [{ Name: "email", Value: username }],
+      UserAttributes: [
+        { Name: "email", Value: username },
+        { Name: "name", Value: name || "N/A" },
+        { Name: "dob", Value: moment(dob).format("YYYY-MM-DD") || "N/A" },
+      ],
       TemporaryPassword: password,
       MessageAction: "SUPPRESS",
     };
