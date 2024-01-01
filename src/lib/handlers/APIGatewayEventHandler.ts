@@ -8,8 +8,11 @@ import {
   IEventResult,
   HTTPClientError,
   Level,
-} from "../../types/APIGatewayTypes";
+  RequestType,
+} from "../../../types/APIGatewayTypes";
 import { EventHandler, EventResult } from "./EventHandler";
+import { IEnvironmentProvider } from "../providers/EnvironmentProvider";
+import { ISessionProvider } from "../providers/SessionProvider";
 
 export interface IAPIGatewayEventHandler {
   getHandler(): APIGatewayProxyHandler;
@@ -19,11 +22,14 @@ export interface IAPIGatewayEventHandler {
   getHeaders(): Record<string, string>;
   handle(event: APIGatewayProxyEvent): Promise<IEventResult>;
   getPath(): string;
+  getMethod(): RequestType;
   getPathParam(paramName: string): string;
   getPathParameters(): Record<string, string>;
+  getToken(): string;
   getQueryParam(paramName: string): string;
   getQueryStringParameters(): Record<string, string>;
   getMultiValueQueryStringParameters(): Record<string, string[]>;
+  setSessionToken(): void;
   errorResponse(e: HTTPClientError): APIGatewayProxyResult;
   setEvent(event: APIGatewayEvent);
 }
@@ -92,6 +98,12 @@ export abstract class APIGatewayEventHandler
       : null;
   }
 
+  getToken(): string {
+    return this.event.headers.Authorization
+      ? this.event.headers.Authorization?.split(" ")[1]
+      : null;
+  }
+
   getQueryStringParameters(): Record<string, string> {
     if (!this.event) {
       throw new Error("Event is undefined");
@@ -106,6 +118,10 @@ export abstract class APIGatewayEventHandler
     }
 
     return this.event.multiValueQueryStringParameters;
+  }
+
+  getMethod(): RequestType {
+    return <RequestType>this.event.requestContext.httpMethod;
   }
 
   setBody(): object {
@@ -130,13 +146,23 @@ export abstract class APIGatewayEventHandler
     this.setBody();
   }
 
+  setSessionToken(): void {
+    if (this.sessionProvider) {
+      this.sessionProvider.setToken(this.getToken());
+    } else {
+      console.error("setSessionToken: Session not found");
+    }
+  }
+
   getHandler(): APIGatewayProxyHandler {
     return async (
       event: APIGatewayProxyEvent
     ): Promise<APIGatewayProxyResult> => {
       this.setEvent(event);
+      this.setSessionToken();
 
       try {
+        // TODO: Sanitize the sensitive information such as passwords, tokens before logging the Request and Responses into CloudWatch
         console.log({
           level: Level.Debug,
           message: "Lambda Request",
@@ -194,5 +220,12 @@ export abstract class APIGatewayEventHandler
         error: JSON.parse(JSON.stringify(e, Object.getOwnPropertyNames(e))),
       }),
     };
+  }
+
+  constructor(
+    public environmentProvider: IEnvironmentProvider,
+    public sessionProvider?: ISessionProvider
+  ) {
+    super(environmentProvider);
   }
 }

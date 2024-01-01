@@ -3,7 +3,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   cloud-project-v1
 
-# We can add parameters
 Parameters:
   ApiStageName:
     Type: String
@@ -13,16 +12,40 @@ Parameters:
     Type: String
     Default: sampleTableName
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+  AppointmentsTableName:
+    Type: String
+    Default: appointments
+
+  SourceEmailAddress:
+    Type: String 
+    Default: nuwan.20232219@iit.ac.lk
+
+  Timezone:
+    Type: String 
+    Default: Asia/Colombo
+
+  appointmentInterval:
+    Type: Number
+    Default: "60"
+
+  appointmentThreshold:
+    Type: Number
+    Default: "30"
+
+
 Globals:
   Function:
-    Timeout: 15
+    Timeout: 60
     Runtime: nodejs16.x
     Tracing: Active
     Environment:
       Variables:
         Stage: !Ref ApiStageName
+        Region: !Ref AWS::Region
+        Timezone: !Ref Timezone
         SampleTableName: !Sub ${sampleTableName}-${ApiStageName}
+        AppointmentTableName: !Sub ${AppointmentsTableName}-${ApiStageName}
+
   Api:
     TracingEnabled: true
 
@@ -31,7 +54,37 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       Name: !Sub cloud-project-${ApiStageName}-api
-      StageName: !Ref ApiStageName # This is where we can set stage name
+      StageName: !Ref ApiStageName 
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UserPool.Arn
+            IdentitySource: method.request.header.Authorization
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub AppUsers-${ApiStageName}
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: CloudUserPoolClient
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
 
   SampleTable:
     Type: "AWS::DynamoDB::Table"
@@ -47,44 +100,177 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
-  SampleFunction:
-    # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  AppointmentsTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Sub ${AppointmentsTableName}-${ApiStageName}
+      AttributeDefinitions:
+        - AttributeName: 'id'
+          AttributeType: 'S'
+      KeySchema:
+        - AttributeName: 'id'
+          KeyType: 'HASH'
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  UserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: ./dist/src/user-handler.default
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminDeleteUser
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminSetUserPassword
+              Resource:
+                - !GetAtt UserPool.Arn
+      Events:
+        UserActions:
+          Type: Api
+          Properties:
+            Path: /user/{action}
+            Method: any
+            RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: NONE
+        ProfileActions:
+          Type: Api
+          Properties:
+            Path: /profile/{action}
+            Method: any
+            RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref UserPool
+          USER_POOL_CLIENT: !Ref UserPoolClient
+          
+  AppointmentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: ./dist/src/appointment-handler.default
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppointmentsTable
+      Events:
+        Appointment:
+          Type: Api 
+          Properties:
+            Path: /appointments
+            Method: any
+            RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AppointmentActions:
+          Type: Api
+          Properties:
+            Path: /appointments/{action}
+            Method: any
+            RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AppointmentSubActions:
+          Type: Api
+          Properties:
+            Path: /appointments/{action}/{appointmentId}
+            Method: any
+            RestApiId: !Ref GatewayAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+      
+      
+  ReminderProcessor:
     Type: AWS::Serverless::Function 
     Properties:
       CodeUri: ./
-      Handler: ./dist/src/sample-handler.default
+      Handler: ./dist/src/reminder-handler.default
       Policies:
-         - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+        - AmazonSESFullAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppointmentsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminDeleteUser
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminSetUserPassword
+              Resource:
+                - !GetAtt UserPool.Arn
+        - SQSSendMessagePolicy:
+            PolicyName: SQSSendMessagePolicy
+            QueueName: !Ref EmailQueue
+            PolicyDocument:
+              Statement:
+                Effect: Allow
+                Actions:
+                  - sqs:SendMessage*
+                  - sqs:SetQueueAttributes
+                Resource: 
+                  - !GetAtt EmailQueue.Arn # This is a temp change 
+                  - "*" # This is a temp change 
+      Environment:
+        Variables:
+          QueueUrl: !GetAtt EmailQueue.QueueUrl
+          USER_POOL_ID: !Ref UserPool
+          USER_POOL_CLIENT: !Ref UserPoolClient
+          AppointmentInterval: !Ref appointmentInterval
+          AppointmentThreshold: !Ref appointmentThreshold
       Events:
-        Sample:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+        WebAPI:
+          Type: Api 
           Properties:
-            Path: /sample
+            Path: /scheduler/reminder
             Method: any
             RestApiId: !Ref GatewayAPI
-        SampleActions:
-          Type: Api
+        Cron:
+          Type: Schedule
           Properties:
-            Path: /sample/{action}
-            Method: any
-            RestApiId: !Ref GatewayAPI
-        SampleSubActions:
-          Type: Api
-          Properties:
-            Path: /sample/{action}/{subAction}
-            Method: any
-            RestApiId: !Ref GatewayAPI
+            Schedule: cron(*/30 * * * ? *)
 
 
+  EmailQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub emailQueue-${ApiStageName}
+      VisibilityTimeout: 60 # Set the visibility timeout as needed
+      MaximumMessageSize: 2048 # Set maximum message size as needed
+      MessageRetentionPeriod: 86400 # Set message retention period in seconds as needed
+
+  EmailQueueFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: ./dist/src/email-handler.default
+      Policies:
+        - AmazonSESFullAccess 
+      Environment:
+        Variables:
+          QueueUrl: !GetAtt EmailQueue.QueueUrl
+          SourceEmailAddress: !Ref SourceEmailAddress
+          
+      Events:
+        EmailSQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt EmailQueue.Arn
+            
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
     Properties:
       Name:
         Fn::Join:
-        - ""
-        - - ApplicationInsights-SAM-
-          - Ref: AWS::StackName
+          - ""
+          - - ApplicationInsights-SAM-
+            - Ref: AWS::StackName
       ResourceQuery:
         Type: CLOUDFORMATION_STACK_1_0
   ApplicationInsightsMonitoring:
@@ -92,16 +278,13 @@ Resources:
     Properties:
       ResourceGroupName:
         Fn::Join:
-        - ""
-        - - ApplicationInsights-SAM-
-          - Ref: AWS::StackName
+          - ""
+          - - ApplicationInsights-SAM-
+            - Ref: AWS::StackName
       AutoConfigurationEnabled: "true"
     DependsOn: ApplicationResourceGroup
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   SampleApi:
-    Description: API Gateway Endpoint URL
-    Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/sample/"
+    Description: API Gateway Endpoint
+    Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/"
