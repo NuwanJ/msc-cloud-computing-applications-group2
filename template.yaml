@@ -18,15 +18,24 @@ Parameters:
 
   SourceEmailAddress:
     Type: String 
-    Default: nuwanjaliyagoda@gmail.com
+    Default: nuwan.20232219@iit.ac.lk
 
   Timezone:
     Type: String 
     Default: Asia/Colombo
 
+  appointmentInterval:
+    Type: Number
+    Default: "60"
+
+  appointmentThreshold:
+    Type: Number
+    Default: "30"
+
+
 Globals:
   Function:
-    Timeout: 15
+    Timeout: 60
     Runtime: nodejs16.x
     Tracing: Active
     Environment:
@@ -56,11 +65,16 @@ Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: AppUsers
+      UserPoolName: !Sub AppUsers-${ApiStageName}
       UsernameAttributes:
         - email
       AutoVerifiedAttributes:
         - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -196,18 +210,20 @@ Resources:
             QueueName: !Ref EmailQueue
             PolicyDocument:
               Statement:
-                - Effect: Allow
-                  Action: 
-                    - sqs:SendMessage
-                    - sqs:SetQueueAttributes
-                  Resource: 
-                    - !GetAtt EmailQueue.Arn # This is a temp change 
-                    - "*" # This is a temp change 
+                Effect: Allow
+                Actions:
+                  - sqs:SendMessage*
+                  - sqs:SetQueueAttributes
+                Resource: 
+                  - !GetAtt EmailQueue.Arn # This is a temp change 
+                  - "*" # This is a temp change 
       Environment:
         Variables:
           QueueUrl: !GetAtt EmailQueue.QueueUrl
           USER_POOL_ID: !Ref UserPool
           USER_POOL_CLIENT: !Ref UserPoolClient
+          AppointmentInterval: !Ref appointmentInterval
+          AppointmentThreshold: !Ref appointmentThreshold
       Events:
         WebAPI:
           Type: Api 
@@ -225,7 +241,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub emailQueue-${ApiStageName}
-      VisibilityTimeout: 15 # Set the visibility timeout as needed
+      VisibilityTimeout: 60 # Set the visibility timeout as needed
       MaximumMessageSize: 2048 # Set maximum message size as needed
       MessageRetentionPeriod: 86400 # Set message retention period in seconds as needed
 
@@ -272,7 +288,3 @@ Outputs:
   SampleApi:
     Description: API Gateway Endpoint
     Value: !Sub "https://${GatewayAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/"
-
-  EmailQueue: 
-    Description: Test
-    Value: !GetAtt EmailQueue.Arn
