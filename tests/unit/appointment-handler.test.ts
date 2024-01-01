@@ -1,45 +1,82 @@
+import moment from "moment-timezone";
 import { AppointmentHandler } from "../../src/handlers/AppointmentHandler";
-import { EnvironmentProvider } from "../../src/lib/providers/EnvironmentProvider";
-import { DynamoDBServiceProvider } from "../../src/lib/providers/DatabaseProvider";
-import { SessionProvider } from "../../src/lib/providers/SessionProvider";
+import { RequestType } from "../../types/APIGatewayTypes";
 
-jest.mock("../../src/lib/providers/EnvironmentProvider");
-jest.mock("../../src/lib/providers/DatabaseProvider");
-jest.mock("../../src/lib/providers/SessionProvider");
+let EnvironmentProviderMock: jest.Mock;
+let SessionProviderMock: jest.Mock;
+let DatabaseProviderMock: jest.Mock;
+let handler;
 
-describe("AppointmentHandler", () => {
-  let environmentProvider;
-  let sessionProvider;
-  let dynamodbProvider;
-  let appointmentHandler;
+beforeAll(() => {
+  EnvironmentProviderMock = jest.fn(() => ({
+    env: {
+      SecretKey: "SecretKey",
+    },
+    getValue(key): string {
+      return key;
+    },
+    getEnvObject(): Record<string, string> {
+      return this.env;
+    },
+  }));
 
-  beforeEach(() => {
-    environmentProvider = new EnvironmentProvider();
-    environmentProvider.getValue = jest.fn((key) => {
-      if (key === "AppointmentTableName") return "mockTableName";
-    });
+  SessionProviderMock = jest.fn(() => ({
+    decodeToken(): unknown {
+      return {
+        sub: "string",
+        email: "user@example.com",
+      };
+    },
+    getUserName(): string {
+      return "user@example.com";
+    },
+    getUserId(): string {
+      return "123-456-789";
+    },
+  }));
+  DatabaseProviderMock = jest.fn(() => ({
+    putItem(item: object): unknown {
+      return { item };
+    },
+  }));
 
-    sessionProvider = new SessionProvider(environmentProvider);
-    dynamodbProvider = new DynamoDBServiceProvider(
-      environmentProvider.getValue("AppointmentTableName")
-    );
+  handler = new AppointmentHandler(
+    EnvironmentProviderMock(),
+    SessionProviderMock(),
+    DatabaseProviderMock()
+  );
 
-    appointmentHandler = new AppointmentHandler(
-      environmentProvider,
-      sessionProvider,
-      dynamodbProvider
-    );
+  handler.setEvent({
+    ...handler.event,
+    requestContext: {
+      ...handler.event?.requestContext,
+      httpMethod: RequestType.GET,
+    },
   });
+});
 
-  it("should create an instance of AppointmentHandler correctly", () => {
-    expect(appointmentHandler).toBeDefined();
-    expect(environmentProvider).toBeInstanceOf(EnvironmentProvider);
-    expect(sessionProvider).toBeInstanceOf(SessionProvider);
-    expect(dynamodbProvider).toBeInstanceOf(DynamoDBServiceProvider);
-  });
+it("should correctly validate create appointment request", async () => {
+  let result;
 
-  it("should return a handler function from getHandler", () => {
-    const handler = appointmentHandler.getHandler();
-    expect(typeof handler).toBe("function");
+  // Bad Path
+  handler.event = { ...handler.event };
+  result = await handler.handle();
+  expect(result.statusCode).toEqual(404);
+
+  // Happy Path
+  handler.setEvent({
+    ...handler.event,
+    requestContext: {
+      ...handler.event?.requestContext,
+      httpMethod: RequestType.PUT,
+    },
+    pathParameters: { action: "create" },
+    body: JSON.stringify({
+      doctorName: "ABC",
+      startTime: moment().format("YYYY-MM-DD HH:mm:ss"),
+      endTime: moment().add(15, "minutes").format("YYYY-MM-DD HH:mm:ss"),
+    }),
   });
+  result = await handler.handle();
+  expect(result.statusCode).toEqual(201);
 });
