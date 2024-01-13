@@ -225,12 +225,12 @@ Resources:
           AppointmentInterval: !Ref appointmentInterval
           AppointmentThreshold: !Ref appointmentThreshold
       Events:
-        WebAPI:
-          Type: Api 
-          Properties:
-            Path: /scheduler/reminder
-            Method: any
-            RestApiId: !Ref GatewayAPI
+        # WebAPI:
+        #   Type: Api 
+        #   Properties:
+        #     Path: /scheduler/reminder
+        #     Method: any
+        #     RestApiId: !Ref GatewayAPI
         Cron:
           Type: Schedule
           Properties:
