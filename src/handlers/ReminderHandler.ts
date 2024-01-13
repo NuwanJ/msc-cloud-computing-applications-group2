@@ -15,6 +15,7 @@ export class ReminderHandler extends APIGatewayEventHandler {
     region: this.environmentProvider.getValue("Region"),
   });
 
+  // Default configurations
   appointmentInterval = 60;
   appointmentThreshold = 30;
 
@@ -108,5 +109,13 @@ export class ReminderHandler extends APIGatewayEventHandler {
 
     // Set timezone
     moment.tz.setDefault(environmentProvider.getValue("Timezone"));
+
+    // Set custom configurations
+    this.appointmentInterval = parseInt(
+      environmentProvider.getValue("AppointmentInterval")
+    );
+    this.appointmentThreshold = parseInt(
+      environmentProvider.getValue("AppointmentThreshold")
+    );
   }
 }
