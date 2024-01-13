@@ -215,8 +215,8 @@ Resources:
                   - sqs:SendMessage*
                   - sqs:SetQueueAttributes
                 Resource: 
-                  - !GetAtt EmailQueue.Arn # This is a temp change 
-                  - "*" # This is a temp change 
+                  - "*"
+                  
       Environment:
         Variables:
           QueueUrl: !GetAtt EmailQueue.QueueUrl
