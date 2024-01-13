@@ -43,7 +43,6 @@ stack_name = "cloud-project-prod"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-ehddinlwucrq"
 s3_prefix = "cloud-project-prod"
 region = "us-east-1"
-profile = "cloud"
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = "ApiStageName=\"prod\""
 image_repositories = []
